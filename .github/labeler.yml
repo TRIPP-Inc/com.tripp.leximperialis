@@ -1,0 +1,24 @@
+# Add 'fix' label to any PR where the head branch name starts with `fix`.
+fix:
+  - head-branch: ['^fix/']
+
+# Add 'bug' label to any PR where the head branch name starts with `bugfix`.
+bug:
+  - head-branch: ['^bugfix/']
+
+# Add 'feature' label to any PR where the head branch name starts with `feature`.
+feature:
+  - head-branch: ['^feature/']
+
+# Add 'enhancement' label to any PR where the head branch name starts with `enhancement`.
+enhancement:
+  - head-branch: ['^enhancement/']
+
+# Add 'release' label to any PR where the head branch name starts with `release`.
+release:
+  - head-branch: ['^release/']
+
+# Add 'dependencies' label to any PR where any changes are made to the `package.json` files.
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file: 'package.json'

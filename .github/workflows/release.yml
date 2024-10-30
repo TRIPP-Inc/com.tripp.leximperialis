@@ -1,0 +1,94 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+jobs:
+  tag:
+    name: Create git tag
+    runs-on: ubuntu-latest
+    outputs:
+      release_version: ${{ steps.package-metadata.outputs.version }}
+      package_path: ${{ steps.package-metadata.outputs.path }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Get package metadata
+        id: package-metadata
+        run: |
+          PACKAGE_COUNT=$(find . -type f -name 'package.json' | wc -l)
+          if [ "$PACKAGE_COUNT" -ne 1 ]; then
+            echo "Error: There should only be one package.json file, but found $PACKAGE_COUNT."
+            exit 1
+          fi
+          PACKAGE_DIR="$(find . -type f -name 'package.json' | head -n 1 | xargs dirname)"
+          VERSION_FILE="${PACKAGE_DIR}/package.json"
+          VERSION="$(cat ${VERSION_FILE} | jq -r .version)"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "path=${PACKAGE_DIR}" >> "$GITHUB_OUTPUT"
+          echo "Using: PATH=${PACKAGE_DIR} | VERSION=${VERSION}"
+
+      - name: Create tag
+        uses: rickstaa/action-create-tag@v1
+        with:
+          tag: "v${{ steps.package-metadata.outputs.version }}"
+          message: "Release v${{ steps.package-metadata.outputs.version }}"
+
+  release:
+    name: Create package release
+    needs: tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{needs.tag.outputs.release_version}}"
+          generate_release_notes: true
+
+  publish:
+    name: Publish package to UPM
+    needs:
+      - tag
+      - release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Send job-start slack notification
+        uses: act10ns/slack@v2
+        with:
+          status: starting
+        if: always()
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup node.js
+        id: setup-nodejs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          registry-url: 'https://upm.trippinc.com'
+      - name: Publish package
+        id: upm-publish
+        run: |
+          cd ${{needs.tag.outputs.package_path}}
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.UPM_TOKEN }}
+      - name: Send job-end slack notification
+        uses: act10ns/slack@v2
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+        if: always()
