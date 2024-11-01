@@ -13,4 +13,5 @@ MonoBehaviour:
   m_Name: CubeMapJudicator
   m_EditorClassIdentifier: 
   phantomProperties: []
-  presets: []
+  presets:
+  - {fileID: 2655988077585873504, guid: 97312c62cf344b640a91131a9f1967b1, type: 2}

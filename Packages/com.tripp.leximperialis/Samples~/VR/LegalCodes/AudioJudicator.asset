@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 12bb28c6ac92efd48afe16daed040bdc, type: 3}
+  m_Script: {fileID: 11500000, guid: c135377381ec7704d8718038c259440d, type: 3}
   m_Name: AudioJudicator
   m_EditorClassIdentifier: 
   phantomProperties: []
