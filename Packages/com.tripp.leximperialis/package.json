@@ -1,6 +1,6 @@
 {
   "name": "com.tripp.leximperialis",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "displayName": "Lex Imperialis",
   "description": "Believed to be the word of the Emperor Himself, for ten thousand Terran years the Lex Imperialis has held the balance between the Imperium's forces, much of it actually derived from the original decrees of the Emperor during the Great Crusade and the precepts of the first lord commander of the Imperium, the Ultramarines Primarch Roboute Guilliman, after the Horus Heresy during the Time of Rebirth.\r\nFollowing the Siege of Terra, when the Emperor sustained mortal wounds during His final confrontation with the Warmaster Horus aboard his flagship the Vengeful Spirit and His subsequent internment within the Golden Throne, Guilliman also assumed the role of Imperial Regent.\r\nIt was he who imposed the Codex Astartes upon his brothers, which saw the sundering of the Legiones Astartes into the smaller, thousand-man Chapters of the Adeptus Astartes. This conciliatory gesture helped to keep the peace between the Space Marines and the Adeptus Terra.\r\nAnd it was Guilliman, in consultation with the great Adeptus Custodes Captain-General Constantin Valdor, who issued the Edict of Restraint, under which the Custodian Guard were expressly enjoined to remain on Terra as guardians of the Enthroned Emperor until the birth of the Great Rift and the start of the Era Indomitus ten thousand standard years later led them to take a more active role in Imperial affairs once more.\n\n'Burn the heretic. Kill the mutant. Purge the unclean.'",
   "unity": "2022.3",
@@ -18,17 +18,16 @@
     "email": "mbracks@trippinc.com",
     "url": "https://www.unity3d.com"
   },
-
   "samples": [
-        {
-            "displayName": "VR",
-            "description": "Contains sample Judicators, Presets, and a Scriptable Object for VR platforms",
-            "path": "Samples~/VR"
-        },
-        {
-            "displayName": "Mobile",
-            "description": "Contains sample Judicators, Presets, and a Scriptable Object for mobile platforms",
-            "path": "Samples~/Mobile"
-        }
-    ]
+    {
+      "displayName": "VR",
+      "description": "Contains sample Judicators, Presets, and a Scriptable Object for VR platforms",
+      "path": "Samples~/VR"
+    },
+    {
+      "displayName": "Mobile",
+      "description": "Contains sample Judicators, Presets, and a Scriptable Object for mobile platforms",
+      "path": "Samples~/Mobile"
+    }
+  ]
 }
