@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace TRIPP.Editor.AssetManagement
+namespace TRIPP.LexImperialis.Editor
 {
     public class MaterialJudicator : Judicator
     {

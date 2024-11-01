@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEditor.Presets;
 using UnityEngine;
 
-namespace TRIPP.Editor.AssetManagement
+namespace TRIPP.LexImperialis.Editor
 {
     public class LexImperialis : ScriptableObject
     {

@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 68045cb70cdb07848827a0a3bcf994ba, type: 3}
+  m_Script: {fileID: 11500000, guid: 311ebf02c2890984a87fe8423848e8e5, type: 3}
   m_Name: MaterialJudicator
   m_EditorClassIdentifier: 
   materialLaws:
@@ -245,20 +245,13 @@ MonoBehaviour:
     - variantKeyWords:
       - _ALPHATEST_ON
       - _SURFACE_TYPE_TRANSPARENT
-  propertyNameToTextureData:
-  - key: _BumpMap
-    value: {fileID: 2800000, guid: 57eaff5a6af811041ad6f88048c318b2, type: 3}
-  - key: _MetallicGlossMap
-    value: {fileID: 2800000, guid: f95b13012e29ec348922f66a0cd366dc, type: 3}
-  - key: _OcclusionMap
-    value: {fileID: 2800000, guid: e4b2eac43f7ba2343825c805ed77ce92, type: 3}
   emptyTextureMapping:
   - keyword: _NORMALMAP
     propertyName: _BumpMap
-    texture: {fileID: 2800000, guid: 57eaff5a6af811041ad6f88048c318b2, type: 3}
+    texture: {fileID: 2800000, guid: b89b7a82373c0474d804dd3648dc6573, type: 3}
   - keyword: _METALLICSPECGLOSSMAP
     propertyName: _MetallicGlossMap
-    texture: {fileID: 2800000, guid: f95b13012e29ec348922f66a0cd366dc, type: 3}
+    texture: {fileID: 2800000, guid: 9ecba205287903343afbd5d6cea3f62c, type: 3}
   - keyword: _OCCLUSIONMAP
     propertyName: _OcclusionMap
-    texture: {fileID: 2800000, guid: e4b2eac43f7ba2343825c805ed77ce92, type: 3}
+    texture: {fileID: 2800000, guid: 818f5a592e4dbc349ad0cb07969ec138, type: 3}

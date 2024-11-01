@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace TRIPP.Editor.AssetManagement
+namespace TRIPP.LexImperialis.Editor
 {
     public abstract class Judicator : ScriptableObject
     {

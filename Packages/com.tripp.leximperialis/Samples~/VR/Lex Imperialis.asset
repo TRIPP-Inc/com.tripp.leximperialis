@@ -9,19 +9,25 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bd397dd41d06f6047a8032ccb87ab736, type: 3}
+  m_Script: {fileID: 11500000, guid: fbb2cb3b95337094ea5b3b1366701e5f, type: 3}
   m_Name: Lex Imperialis
   m_EditorClassIdentifier: 
   judicatorFilters:
   - objectType: GameObject
     importerType: 4
-    judicator: {fileID: 11400000, guid: 520935e8beb3f0243aa3879980253383, type: 2}
+    judicator: {fileID: 11400000, guid: 708df5ea66606c24da6280560785e8de, type: 2}
   - objectType: Texture2D
     importerType: 9
-    judicator: {fileID: 11400000, guid: dc63b0ee4e459fc4387e03712142822d, type: 2}
+    judicator: {fileID: 11400000, guid: 0aac535d2f297d84ea680e38df4f06ba, type: 2}
   - objectType: LightingSettings
     importerType: 0
-    judicator: {fileID: 11400000, guid: 3723f4c7c96bbb947968ac937ba44282, type: 2}
+    judicator: {fileID: 11400000, guid: 9614266c5366dd344a45b0f001265944, type: 2}
   - objectType: AudioClip
     importerType: 1
-    judicator: {fileID: 11400000, guid: c76a01e1c18681f40ac386f7cd8b531f, type: 2}
+    judicator: {fileID: 11400000, guid: 7b4a295d60fd0d04d8856dfe7e3de97e, type: 2}
+  - objectType: Material
+    importerType: 0
+    judicator: {fileID: 11400000, guid: 94adbc2c205e11d4fbac528b8d351ed2, type: 2}
+  - objectType: Cubemap
+    importerType: 9
+    judicator: {fileID: 11400000, guid: bbc1c6b49b3316e47bc203a3f9fdf1c2, type: 2}

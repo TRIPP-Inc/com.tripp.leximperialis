@@ -9,8 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8c5c5e37caa0e27459712ff9f98b6bb0, type: 3}
+  m_Script: {fileID: 11500000, guid: fae54c9284a0e8d4ab76e1d45bdd8db1, type: 3}
   m_Name: ModelJudicator
   m_EditorClassIdentifier: 
+  phantomProperties:
+  - materialName
   presets:
   - {fileID: 2655988077585873504, guid: 0a204f7608cc6d148bd7148e89ac8672, type: 2}
