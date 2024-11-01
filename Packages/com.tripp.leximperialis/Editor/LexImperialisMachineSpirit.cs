@@ -6,7 +6,7 @@ using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace TRIPP.Editor.AssetManagement
+namespace TRIPP.LexImperialis.Editor
 {
     public class LexImperialisMachineSpirit
     {

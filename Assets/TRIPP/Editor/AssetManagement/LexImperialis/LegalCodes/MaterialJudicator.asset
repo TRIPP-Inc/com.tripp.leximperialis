@@ -245,13 +245,6 @@ MonoBehaviour:
     - variantKeyWords:
       - _ALPHATEST_ON
       - _SURFACE_TYPE_TRANSPARENT
-  propertyNameToTextureData:
-  - key: _BumpMap
-    value: {fileID: 2800000, guid: 57eaff5a6af811041ad6f88048c318b2, type: 3}
-  - key: _MetallicGlossMap
-    value: {fileID: 2800000, guid: f95b13012e29ec348922f66a0cd366dc, type: 3}
-  - key: _OcclusionMap
-    value: {fileID: 2800000, guid: e4b2eac43f7ba2343825c805ed77ce92, type: 3}
   emptyTextureMapping:
   - keyword: _NORMALMAP
     propertyName: _BumpMap

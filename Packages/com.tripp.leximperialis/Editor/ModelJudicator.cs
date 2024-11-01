@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
-namespace TRIPP.Editor.AssetManagement
+namespace TRIPP.LexImperialis.Editor
 {
     [CreateAssetMenu(fileName = "ModelJudicator", menuName = "ScriptableObjects/LexImperialis/ModelJudicator")]
     public class ModelJudicator : ImporterJudicator

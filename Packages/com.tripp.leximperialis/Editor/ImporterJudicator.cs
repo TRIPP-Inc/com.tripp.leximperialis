@@ -9,7 +9,7 @@ using UnityEditor.Presets;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace TRIPP.Editor.AssetManagement
+namespace TRIPP.LexImperialis.Editor
 {
     [CreateAssetMenu(fileName = "PresetJudicator", menuName = "ScriptableObjects/LexImperialis/PresetJudicator")]
     public class ImporterJudicator : Judicator
