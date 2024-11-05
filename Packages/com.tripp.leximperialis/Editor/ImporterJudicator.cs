@@ -60,25 +60,30 @@ namespace TRIPP.LexImperialis.Editor
             return result;
         }
 
-        private bool MatchesPreset(AssetImporter importer, Preset preset)
+        protected bool ComponentMatchesPreset(Component component, Preset preset)
         {
-            if(preset.DataEquals(importer))
+            return MatchesPreset(component, preset);
+        }
+
+        private bool MatchesPreset(Object accusedObject, Preset preset)
+        {
+            if(preset.DataEquals(accusedObject))
                 return true;
 
-            var importerType = importer.GetType();
+            var accusedObjectType = accusedObject.GetType();
             var presetType = preset.GetType();
             List<string> excluded = new List<string>();
             excluded.AddRange(preset.excludedProperties);
             excluded.AddRange(phantomProperties);
 
-            foreach (PropertyInfo propertyInfo in importerType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            foreach (PropertyInfo propertyInfo in accusedObjectType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
                 if (!excluded.Contains(propertyInfo.Name))
                 {                    
                     try
                     {
                         var presetValue = presetType.GetProperty(propertyInfo.Name)?.GetValue(preset, null);
-                        var importerValue = propertyInfo.GetValue(importer, null);
+                        var importerValue = propertyInfo.GetValue(accusedObject, null);
                         if (!object.Equals(presetValue, importerValue))
                         {
                             Debug.Log(propertyInfo.Name);
