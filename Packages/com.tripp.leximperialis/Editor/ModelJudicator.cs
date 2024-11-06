@@ -78,6 +78,19 @@ namespace TRIPP.LexImperialis.Editor
             // Check if there is a secondary UV set
             bool hasSecondaryUVSet = HasSecondaryUVSet(mesh);
 
+            // Check if pivot is at (0,0,0)
+            bool isPivotAtOrigin = IsMeshPivotAtOrigin(mesh);
+
+            if(!isPivotAtOrigin)
+            {
+                AddToJudgement(judgment, new Infraction
+                {
+                    isFixable = false,
+                    message = $"{objectName}: The pivot is not set at the origin (0,0,0)"
+                });
+            }
+
+
             // If the primary UV set is valid, log the message and check secondary UV set
             if (primaryUVsGood)
             {
@@ -147,6 +160,22 @@ namespace TRIPP.LexImperialis.Editor
             }
 
             // If infractions found, judgment remains populated
+        }
+
+        private bool IsMeshPivotAtOrigin(Mesh mesh)
+        {
+            
+            Vector3 pivotOffset = mesh.bounds.center;
+
+            if(pivotOffset.x == 0f &&
+               pivotOffset.y == 0f &&
+               pivotOffset.z == 0f)
+            {
+                return true;
+            }
+
+            return false;
+            
         }
 
         private bool HasOverlappingTriangles(Mesh mesh, Vector2[] uvs)
