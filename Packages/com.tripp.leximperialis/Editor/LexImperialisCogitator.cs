@@ -1,9 +1,5 @@
-
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
-using UnityEditor.EditorTools;
-using UnityEditor.Presets;
 using UnityEngine;
 
 namespace TRIPP.LexImperialis.Editor
