@@ -65,7 +65,7 @@ namespace TRIPP.LexImperialis.Editor
             return MatchesPreset(component, preset);
         }
 
-        private bool MatchesPreset(Object accusedObject, Preset preset)
+        protected bool MatchesPreset(Object accusedObject, Preset preset)
         {
             if(preset.DataEquals(accusedObject))
                 return true;
