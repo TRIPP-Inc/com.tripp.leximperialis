@@ -37,7 +37,7 @@ namespace TRIPP.LexImperialis.Editor
             }
 
             // Check the mesh for any UV infractions and add them to the judgment
-            CheckForInfractions(judgment, accusedMesh, gameObject.name);
+            CheckForInfractions(judgment, accusedMesh, gameObject);
 
             // If no infractions were found, return null judgment
             if (judgment.infractions.Count == 0)
@@ -66,8 +66,10 @@ namespace TRIPP.LexImperialis.Editor
             return null;
         }
 
-        private void CheckForInfractions(Judgment judgment, Mesh mesh, string objectName)
+        private void CheckForInfractions(Judgment judgment, Mesh mesh, GameObject accusedObject)
         {
+            string objectName = accusedObject.name;
+
             // Check for primary UV set issues
             bool hasFlippedUVs1 = HasFlippedUVs(mesh.uv, mesh.triangles, mesh);
             bool hasOverlappingUVs1 = HasOverlappingTriangles(mesh, mesh.uv);
@@ -81,12 +83,24 @@ namespace TRIPP.LexImperialis.Editor
             // Check if pivot is at (0,0,0)
             bool isPivotAtOrigin = IsMeshPivotAtOrigin(mesh);
 
+            // Check if hierarchy has no empty children
+            bool isHierarchyPure = IsHierarchyClean(accusedObject);
+
             if(!isPivotAtOrigin)
             {
                 AddToJudgement(judgment, new Infraction
                 {
                     isFixable = false,
                     message = $"{objectName}: The pivot is not set at the origin (0,0,0)"
+                });
+            }
+
+            if (!isHierarchyPure)
+            {
+                AddToJudgement(judgment, new Infraction
+                {
+                    isFixable = false,
+                    message = $"{objectName}: The hierarchy of the object contains empty children"
                 });
             }
 
@@ -160,6 +174,63 @@ namespace TRIPP.LexImperialis.Editor
             }
 
             // If infractions found, judgment remains populated
+        }
+
+        //Returns true if GameObject contains the indicated Component, false otherwise
+        private bool HasComponent<T>(GameObject obj)where T:Component
+        {
+            return obj.GetComponent<T>() != null;
+        }
+
+        private bool IsHierarchyClean(GameObject rootObject)
+        {
+            //Has a skinned mesh renderer been found?
+            bool foundRig = false;
+            //Transform rigRootBone;
+            int rigFoundAt = -1;
+
+            for (int i = 0; i< rootObject.transform.childCount; i++)
+            {
+                //Populates an array with all the children of the children in the first level
+                Transform[] childArray = rootObject.transform.GetChild(i).gameObject.GetComponentsInChildren<Transform>();
+
+
+                foreach (Transform t in childArray)
+                {
+                    if (HasComponent<SkinnedMeshRenderer>(t.gameObject))
+                    {                      
+                        foundRig = true;
+                        //rigRootBone = t.GetComponent<SkinnedMeshRenderer>().rootBone;
+                        rigFoundAt = i;
+                        break;
+                    }                                              
+                }
+
+                if (foundRig)
+                    break;
+
+            }
+
+            for (int i = 0; i < rootObject.transform.childCount; i++)
+            {
+                if (foundRig && i == rigFoundAt)
+                    continue;
+
+                //Populates an array with all the children of the children in the first level
+                Transform[] childArray = rootObject.transform.GetChild(i).gameObject.GetComponentsInChildren<Transform>();
+
+                foreach (Transform t in childArray)
+                {
+                    if (t.childCount == 0 && t.GetComponent<Component>() == null)
+                        //Found dirty node
+                        return false;
+                }
+
+            }
+
+
+            //Clean hierarchy
+            return true;
         }
 
         private bool IsMeshPivotAtOrigin(Mesh mesh)
