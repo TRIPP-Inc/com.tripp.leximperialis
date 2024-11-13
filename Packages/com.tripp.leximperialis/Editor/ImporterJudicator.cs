@@ -13,7 +13,7 @@ namespace TRIPP.LexImperialis.Editor
     {
         public string[] phantomProperties;
         public List<Preset> presets;
-   
+
         public override Judgment Adjudicate(Object accused)
         {
             Judgment result = null;
@@ -24,21 +24,16 @@ namespace TRIPP.LexImperialis.Editor
             {
                 if (preset == null)
                     continue;
-                
-                if (!MatchesPreset(importer, preset))
-                    continue;
-                else
-                    passed = true;
+
+                if (MatchesPreset(importer, preset))
+                {
+                    passed = true; // Mark as passed if preset matches
+                    break;
+                }
             }
 
             if (!passed)
             {
-                bool fixable = false;
-                if (presets.Count == 1)
-                {
-                    fixable = true;
-                }
-
                 result = new Judgment
                 {
                     accused = accused,
@@ -47,24 +42,19 @@ namespace TRIPP.LexImperialis.Editor
                     {
                         new Infraction
                         {
-                            isFixable = fixable,
+                            isFixable = false,
                             message = $"{accused.name} does not adhere to preset(s)"
                         }
                     }
                 };
             }
-        
-            return result;
-        }
 
-        protected bool ComponentMatchesPreset(Component component, Preset preset)
-        {
-            return MatchesPreset(component, preset);
+            return result;
         }
 
         protected bool MatchesPreset(Object accusedObject, Preset preset)
         {
-            if(preset.DataEquals(accusedObject))
+            if (preset.DataEquals(accusedObject))
                 return true;
 
             var accusedObjectType = accusedObject.GetType();
@@ -76,14 +66,14 @@ namespace TRIPP.LexImperialis.Editor
             foreach (PropertyInfo propertyInfo in accusedObjectType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
                 if (!excluded.Contains(propertyInfo.Name))
-                {                    
+                {
                     try
                     {
                         var presetValue = presetType.GetProperty(propertyInfo.Name)?.GetValue(preset, null);
                         var importerValue = propertyInfo.GetValue(accusedObject, null);
                         if (!object.Equals(presetValue, importerValue))
                         {
-                            Debug.Log(propertyInfo.Name);
+                            // Return an infraction if there's a mismatch
                             return false;
                         }
                     }
@@ -97,7 +87,8 @@ namespace TRIPP.LexImperialis.Editor
                     }
                 }
             }
-            return true;
+
+            return true; // If all properties match
         }
 
         public override string ServitudeImperpituis(Judgment judgment, Infraction infraction)
