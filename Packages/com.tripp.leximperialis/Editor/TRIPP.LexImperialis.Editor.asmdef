@@ -1,3 +1,16 @@
 {
-	"name": "TRIPP.LexImperialis.Editor"
+    "name": "TRIPP.LexImperialis.Editor",
+    "rootNamespace": "TRIPP.LexImperialis.Editor",
+    "references": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }
