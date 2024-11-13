@@ -54,22 +54,35 @@ namespace TRIPP.LexImperialis.Editor
                 {
                     if (preset != null)
                     {
-                        // Use MatchesPreset to quickly check for general matching
-                        if (MatchesPreset(particleSystem, preset))
+                        // Use MatchesPreset to get a list of mismatch details
+                        List<string> mismatchDetails = MatchesPreset(particleSystem, preset);
+                        if (mismatchDetails.Count == 0)
                         {
-                            passed = true;  // If the preset matches, flag as passed
-                            break;  // No need to check further presets
+                            passed = true;  // If no mismatches, flag as passed
+                            break;          // No need to check further presets
+                        }
+                        else
+                        {
+                            // Add an individual infraction for each mismatch
+                            foreach (string detail in mismatchDetails)
+                            {
+                                infractions.Add(new Infraction
+                                {
+                                    isFixable = false,
+                                    message = $"{particleSystem.name} mismatch: {detail}"
+                                });
+                            }
                         }
                     }
                 }
 
-                if (!passed)
+                if (!passed && infractions.Count == 0)
                 {
-                    // If no matching preset, add infraction to the list
+                    // Ensure an infraction is added if no presets matched
                     infractions.Add(new Infraction
                     {
                         isFixable = false,
-                        message = $"{particleSystem.name} does not adhere to preset(s)"
+                        message = $"{particleSystem.name} does not adhere to any preset(s)"
                     });
                 }
             }
