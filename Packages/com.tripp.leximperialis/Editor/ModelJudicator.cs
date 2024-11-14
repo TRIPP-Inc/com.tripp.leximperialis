@@ -139,14 +139,25 @@ namespace TRIPP.LexImperialis.Editor
         {
             List<Infraction> result = new List<Infraction>();
             GameObject rootObject = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GetAssetPath(modelImporter));
+            Transform rigRoot = null;
+            SkinnedMeshRenderer skinnedMeshRenderer = rootObject.GetComponentInChildren<SkinnedMeshRenderer>();
+            if (skinnedMeshRenderer != null)
+            {
+                rigRoot = skinnedMeshRenderer.rootBone;
+            }
 
-            List<Transform> rigTransforms = rootObject.GetComponentsInChildren<Transform>().ToList();
+            List<Transform> rigTransforms = new List<Transform>();
+            if (rigRoot != null)
+            {
+                rigTransforms = rootObject.GetComponentsInChildren<Transform>().ToList();
+            }
+
             foreach (Transform transform in rootObject.GetComponentsInChildren<Transform>())
             {
-                if(rigTransforms.Contains(transform))
+                if (rigTransforms.Contains(transform))
                     continue;
 
-                if (transform.childCount == 0 && transform.GetComponent<Component>() == null)
+                if (transform.childCount == 0 && transform.GetComponents<Component>().Count() < 2)
                 {
                     result.Add(new Infraction
                     {
