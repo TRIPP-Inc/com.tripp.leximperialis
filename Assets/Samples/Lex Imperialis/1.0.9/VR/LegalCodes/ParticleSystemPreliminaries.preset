@@ -17088,43 +17088,4 @@ Preset:
     propertyPath: CustomDataModule.vectorLabel1_3
     value: W
     objectReference: {fileID: 0}
-  m_ExcludedProperties:
-  - lengthInSec
-  - looping
-  - prewarm
-  - startDelay.scalar
-  - InitialModule.startLifetime.scalar
-  - InitialModule.startSpeed.scalar
-  - InitialModule.size3D
-  - InitialModule.startSize.scalar
-  - InitialModule.rotation3D
-  - InitialModule.startRotation.scalar
-  - InitialModule.randomizeRotationDirection
-  - InitialModule.startColor
-  - InitialModule.gravitySource
-  - moveWithTransform
-  - simulationSpeed
-  - useUnscaledTime
-  - scalingMode
-  - playOnAwake
-  - emitterVelocityMode
-  - autoRandomSeed
-  - stopAction
-  - cullingMode
-  - ringBufferMode
-  - ShapeModule
-  - ColorModule
-  - ColorBySpeedModule
-  - SizeModule
-  - SizeBySpeedModule
-  - RotationModule
-  - RotationBySpeedModule
-  - ExternalForcesModule
-  - NoiseModule
-  - CollisionModule
-  - TriggerModule
-  - SubModule
-  - UVModule
-  - LightsModule
-  - TrailModule
-  - CustomDataModule
+  m_ExcludedProperties: []
