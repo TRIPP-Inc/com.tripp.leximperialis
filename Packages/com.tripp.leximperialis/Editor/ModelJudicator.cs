@@ -164,14 +164,16 @@ namespace TRIPP.LexImperialis.Editor
             Infraction result = null;
             GameObject rootObject = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GetAssetPath(modelImporter));
 
-            if (rootObject.transform.position != Vector3.zero)
-            {
-                result = new Infraction
+            for(int i = 0; i<rootObject.transform.childCount; i++)
+
+                if (rootObject.transform.GetChild(i).transform.position != Vector3.zero)
                 {
-                    isFixable = false,
-                    message = $"{modelImporter.name}: The pivot is not set at the origin (0,0,0)"
-                };
-            }
+                    result = new Infraction
+                    {
+                        isFixable = false,
+                        message = $"{modelImporter.name}: The pivot is not set at the origin (0,0,0)"
+                    };
+                }
 
             return result;
         }
