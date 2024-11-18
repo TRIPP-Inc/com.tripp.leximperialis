@@ -174,19 +174,20 @@ namespace TRIPP.LexImperialis.Editor
         {
             Infraction result = null;
             GameObject rootObject = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GetAssetPath(modelImporter));
-            if (rootObject.transform.localPosition != Vector3.zero)
+            if (rootObject.GetComponents<Component>().Count() > 1)
             {
+                if(rootObject.transform.localPosition != Vector3.zero)
                 result = new Infraction
                 {
                     isFixable = false,
                     message = $"{rootObject.name}: The pivot is not set at the origin (0,0,0)"
                 };
             }
-            else if(rootObject.GetComponents<Component>().Count() != 1)
+            else if(rootObject.GetComponents<Component>().Count() == 1)
             {
                 for (int i = 0; i < rootObject.transform.childCount; i++)
                 {
-                    if (rootObject.transform.GetChild(i).transform.position != Vector3.zero)
+                    if (rootObject.transform.GetChild(i).transform.localPosition != Vector3.zero)
                     {
                         result = new Infraction
                         {
