@@ -55,7 +55,7 @@ namespace TRIPP.LexImperialis.Editor
                     if (preset != null)
                     {
                         // Get the list of infractions from MatchesPreset
-                        List<Infraction> presetInfractions = MatchesPreset(particleSystem, preset);
+                        List<Infraction> presetInfractions = GetPresetInfractions(particleSystem, preset);
                         if (presetInfractions.Count == 0)
                         {
                             // If the preset matches, mark as matched and break

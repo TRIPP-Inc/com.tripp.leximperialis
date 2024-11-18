@@ -14,6 +14,7 @@ namespace TRIPP.LexImperialis.Editor
     [CreateAssetMenu(fileName = "PresetJudicator", menuName = "ScriptableObjects/LexImperialis/PresetJudicator")]
     public class ImporterJudicator : Judicator
     {
+        public int floatComparisonPrecision = 4;
         public string[] phantomProperties;
         public List<Preset> presets;
 
@@ -121,12 +122,15 @@ namespace TRIPP.LexImperialis.Editor
                     result.accusedValue = property.boolValue.ToString();
                     break;
                 case SerializedPropertyType.Float:
-                    result.accusedValue = property.floatValue.ToString();
+                    float presetFloat = float.Parse(propertyModificationValue);
+                    result.presetValue = presetFloat.ToString($"F{floatComparisonPrecision}");
+                    result.accusedValue = property.floatValue.ToString($"F{floatComparisonPrecision}");
                     break;
                 case SerializedPropertyType.Enum:
                     result.accusedValue = property.enumNames[property.enumValueIndex];
                     break;
                 case SerializedPropertyType.ObjectReference:
+                    result.presetValue = propertyModificationValue == "" ? "None" : propertyModificationValue;
                     result.accusedValue = property.objectReferenceValue != null ? property.objectReferenceValue.name : "None";
                     break;
                 case SerializedPropertyType.ArraySize:
