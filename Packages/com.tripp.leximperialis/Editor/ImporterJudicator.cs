@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using Unity.VisualScripting.YamlDotNet.Core.Tokens;
 using UnityEditor;
 using UnityEditor.Presets;
 using UnityEngine;
@@ -18,86 +21,165 @@ namespace TRIPP.LexImperialis.Editor
         {
             Judgment result = null;
             AssetImporter importer = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(accused));
+            if (importer == null)
+                return result;
 
-            List<Infraction> infractions = new List<Infraction>();
-
+            List<Infraction> infractions = null;
             foreach (var preset in presets)
             {
                 if (preset == null)
                     continue;
 
-                // Get the list of infractions from MatchesPreset
-                List<Infraction> presetInfractions = MatchesPreset(importer, preset);
-                if (presetInfractions.Count == 0)
+                List<Infraction> presetInfractions = GetPresetInfractions(importer, preset);
+                if (presetInfractions != null && presetInfractions.Count > 0)
                 {
-                    // If the preset matches, break out of the loop
-                    return null; // No need to create a judgment if everything is fine
-                }
-                else
-                {
-                    // Add all infractions to the main list
+                    if (infractions == null)
+                        infractions = new List<Infraction>();
+
                     infractions.AddRange(presetInfractions);
                 }
             }
 
-            // If there are infractions, create and return a Judgment
-            if (infractions.Count > 0)
+            if (infractions != null)
             {
                 result = new Judgment
                 {
                     accused = accused,
-                    judicator = this,
-                    infractions = infractions
+                    infractions = infractions,
+                    judicator = this
                 };
             }
 
             return result;
         }
 
-        protected List<Infraction> MatchesPreset(Object accusedObject, Preset preset)
+        protected List<Infraction> GetPresetInfractions(Object accusedObject, Preset preset)
         {
-            List<Infraction> infractions = new List<Infraction>();
+            List<Infraction> infractions = null;
 
-            if (preset.DataEquals(accusedObject))
-                return infractions; // Return an empty list if the object matches the preset
-
-            Type accusedObjectType = accusedObject.GetType();
-            Type presetType = preset.GetType();
-            List<string> excluded = new List<string>();
-            excluded.AddRange(preset.excludedProperties);
-            excluded.AddRange(phantomProperties);
-
-            foreach (PropertyInfo propertyInfo in accusedObjectType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            if(preset == null || accusedObject == null)
             {
-                if (!excluded.Contains(propertyInfo.Name))
-                {
-                    try
-                    {
-                        object presetValue = presetType.GetProperty(propertyInfo.Name)?.GetValue(preset, null);
-                        object accusedValue = propertyInfo.GetValue(accusedObject, null);
+                return infractions;
+            }
 
-                        if (!object.Equals(presetValue, accusedValue))
-                        {
-                            // Create an individual infraction for each mismatch
-                            infractions.Add(new Infraction
-                            {
-                                isFixable = false,
-                                message = $"{propertyInfo.Name}: expected {presetValue}, found {accusedValue}"
-                            });
-                        }
-                    }
-                    catch (TargetInvocationException ex) when (ex.InnerException is NotSupportedException)
+            if(preset.DataEquals(accusedObject))
+                return infractions;
+
+            SerializedObject accusedSerializedObject = new SerializedObject(accusedObject);
+            SerializedObject presetSerializedObject = new SerializedObject(preset);
+            foreach(PropertyModification propertyModification in preset.PropertyModifications)
+            {
+                SerializedProperty accusedProperty = accusedSerializedObject.FindProperty(propertyModification.propertyPath);
+                
+                if (accusedProperty == null)
+                {
+                    Debug.LogWarning($"Property {propertyModification.propertyPath} not found in {accusedObject.name}");
+                    continue;
+                }
+
+                ComparisonStrings comparisonStrings = ValueToString(accusedProperty, propertyModification.value);
+                if (comparisonStrings.presetValue != comparisonStrings.accusedValue)
+                { 
+                    if (infractions == null)
+                        infractions = new List<Infraction>();
+
+                    infractions.Add(new Infraction
                     {
-                        Debug.LogWarning($"Property {propertyInfo.Name} is not supported and was skipped.");
-                    }
-                    catch (AmbiguousMatchException)
-                    {
-                        Debug.LogWarning($"Property {propertyInfo.Name} resulted in an ambiguous match and was skipped.");
-                    }
+                        isFixable = true,
+                        message = $"{accusedProperty.displayName}: expected {comparisonStrings.presetValue}, found {comparisonStrings.accusedValue}"
+                    });
                 }
             }
 
-            return infractions; // Return the list of infractions
+            return infractions;
+        }
+
+        private class ComparisonStrings
+        { 
+            public string presetValue;
+            public string accusedValue;
+        }
+
+        private ComparisonStrings ValueToString(SerializedProperty property, string propertyModificationValue)
+        {
+            ComparisonStrings result = new ComparisonStrings
+            {
+                presetValue = propertyModificationValue
+            };
+
+            switch (property.propertyType)
+            {
+                case SerializedPropertyType.String:
+                    result.presetValue = propertyModificationValue == string.Empty ? "Empty" : propertyModificationValue;
+                    result.accusedValue = property.stringValue == string.Empty ? "Empty" : property.stringValue;
+                    break;
+                case SerializedPropertyType.Integer:
+                    result.accusedValue = property.intValue.ToString();
+                    break;
+                case SerializedPropertyType.Boolean:
+                    result.presetValue = propertyModificationValue == "0" ? "False" : "True";
+                    result.accusedValue = property.boolValue.ToString();
+                    break;
+                case SerializedPropertyType.Float:
+                    result.accusedValue = property.floatValue.ToString();
+                    break;
+                case SerializedPropertyType.Enum:
+                    result.accusedValue = property.enumNames[property.enumValueIndex];
+                    break;
+                case SerializedPropertyType.ObjectReference:
+                    result.accusedValue = property.objectReferenceValue != null ? property.objectReferenceValue.name : "None";
+                    break;
+                case SerializedPropertyType.ArraySize:
+                    result.accusedValue = property.intValue.ToString();
+                    break;
+                case SerializedPropertyType.Character:
+                    result.accusedValue = property.stringValue;
+                    break;
+                case SerializedPropertyType.AnimationCurve:
+                    result.accusedValue = property.animationCurveValue.ToString();
+                    break;
+                case SerializedPropertyType.Bounds:
+                    result.accusedValue = property.boundsValue.ToString();
+                    break;
+                case SerializedPropertyType.Color:
+                    result.accusedValue = property.colorValue.ToString();
+                    break;
+                case SerializedPropertyType.Gradient:
+                    result.accusedValue = property.gradientValue.ToString();
+                    break;
+                case SerializedPropertyType.LayerMask:
+                    result.accusedValue = property.intValue.ToString();
+                    break;
+                case SerializedPropertyType.Quaternion:
+                    result.accusedValue = property.quaternionValue.ToString();
+                    break;
+                case SerializedPropertyType.Rect:
+                    result.accusedValue = property.rectValue.ToString();
+                    break;
+                case SerializedPropertyType.Vector2:
+                    result.accusedValue = property.vector2Value.ToString();
+                    break;
+                case SerializedPropertyType.Vector3:
+                    result.accusedValue = property.vector3Value.ToString();
+                    break;
+                case SerializedPropertyType.Vector4:
+                    result.accusedValue = property.vector4Value.ToString();
+                    break;
+                case SerializedPropertyType.ExposedReference:
+                    result.accusedValue = property.exposedReferenceValue != null ? property.exposedReferenceValue.name : "None";
+                    break;
+                case SerializedPropertyType.FixedBufferSize:
+                    result.accusedValue = property.fixedBufferSize.ToString();
+                    break;
+                case SerializedPropertyType.Generic:
+                    result.accusedValue = "Generic";
+                    break;
+                default:
+                    result.accusedValue = "Unrecognized Type";
+                    break;
+            }
+
+            return result;
         }
 
         public override string ServitudeImperpituis(Judgment judgment, Infraction infraction)
