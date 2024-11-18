@@ -47,29 +47,36 @@ namespace TRIPP.LexImperialis.Editor
 
             foreach (ParticleSystem particleSystem in particleSystems)
             {
-                bool passed = false;
+                bool matched = false;
 
                 // Check against each preset
                 foreach (var preset in presets)
                 {
                     if (preset != null)
                     {
-                        // Use MatchesPreset to quickly check for general matching
-                        if (MatchesPreset(particleSystem, preset))
+                        // Get the list of infractions from MatchesPreset
+                        List<Infraction> presetInfractions = MatchesPreset(particleSystem, preset);
+                        if (presetInfractions.Count == 0)
                         {
-                            passed = true;  // If the preset matches, flag as passed
-                            break;  // No need to check further presets
+                            // If the preset matches, mark as matched and break
+                            matched = true;
+                            break;
+                        }
+                        else
+                        {
+                            // Add all infractions to the main list
+                            infractions.AddRange(presetInfractions);
                         }
                     }
                 }
 
-                if (!passed)
+                if (!matched)
                 {
-                    // If no matching preset, add infraction to the list
+                    // If no presets matched, add a general infraction
                     infractions.Add(new Infraction
                     {
                         isFixable = false,
-                        message = $"{particleSystem.name} does not adhere to preset(s)"
+                        message = $"{particleSystem.name} does not adhere to any of the provided presets."
                     });
                 }
             }

@@ -17,48 +17,52 @@ namespace TRIPP.LexImperialis.Editor
         public override Judgment Adjudicate(Object accused)
         {
             Judgment result = null;
-            bool passed = false;
             AssetImporter importer = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(accused));
+
+            List<Infraction> infractions = new List<Infraction>();
 
             foreach (var preset in presets)
             {
                 if (preset == null)
                     continue;
 
-                if (MatchesPreset(importer, preset))
+                // Get the list of infractions from MatchesPreset
+                List<Infraction> presetInfractions = MatchesPreset(importer, preset);
+                if (presetInfractions.Count == 0)
                 {
-                    passed = true; // Mark as passed if preset matches
-                    break;
+                    // If the preset matches, break out of the loop
+                    return null; // No need to create a judgment if everything is fine
+                }
+                else
+                {
+                    // Add all infractions to the main list
+                    infractions.AddRange(presetInfractions);
                 }
             }
 
-            if (!passed)
+            // If there are infractions, create and return a Judgment
+            if (infractions.Count > 0)
             {
                 result = new Judgment
                 {
                     accused = accused,
                     judicator = this,
-                    infractions = new List<Infraction>
-                    {
-                        new Infraction
-                        {
-                            isFixable = false,
-                            message = $"{accused.name} does not adhere to preset(s)"
-                        }
-                    }
+                    infractions = infractions
                 };
             }
 
             return result;
         }
 
-        protected bool MatchesPreset(Object accusedObject, Preset preset)
+        protected List<Infraction> MatchesPreset(Object accusedObject, Preset preset)
         {
-            if (preset.DataEquals(accusedObject))
-                return true;
+            List<Infraction> infractions = new List<Infraction>();
 
-            var accusedObjectType = accusedObject.GetType();
-            var presetType = preset.GetType();
+            if (preset.DataEquals(accusedObject))
+                return infractions; // Return an empty list if the object matches the preset
+
+            Type accusedObjectType = accusedObject.GetType();
+            Type presetType = preset.GetType();
             List<string> excluded = new List<string>();
             excluded.AddRange(preset.excludedProperties);
             excluded.AddRange(phantomProperties);
@@ -69,12 +73,17 @@ namespace TRIPP.LexImperialis.Editor
                 {
                     try
                     {
-                        var presetValue = presetType.GetProperty(propertyInfo.Name)?.GetValue(preset, null);
-                        var importerValue = propertyInfo.GetValue(accusedObject, null);
-                        if (!object.Equals(presetValue, importerValue))
+                        object presetValue = presetType.GetProperty(propertyInfo.Name)?.GetValue(preset, null);
+                        object accusedValue = propertyInfo.GetValue(accusedObject, null);
+
+                        if (!object.Equals(presetValue, accusedValue))
                         {
-                            // Return an infraction if there's a mismatch
-                            return false;
+                            // Create an individual infraction for each mismatch
+                            infractions.Add(new Infraction
+                            {
+                                isFixable = false,
+                                message = $"{propertyInfo.Name}: expected {presetValue}, found {accusedValue}"
+                            });
                         }
                     }
                     catch (TargetInvocationException ex) when (ex.InnerException is NotSupportedException)
@@ -88,7 +97,7 @@ namespace TRIPP.LexImperialis.Editor
                 }
             }
 
-            return true; // If all properties match
+            return infractions; // Return the list of infractions
         }
 
         public override string ServitudeImperpituis(Judgment judgment, Infraction infraction)
