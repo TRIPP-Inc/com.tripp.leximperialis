@@ -56,6 +56,12 @@ namespace TRIPP.LexImperialis.Editor
                 result.AddRange(emptyNodeInfractions);
             }
 
+            List<Infraction> tricountInfraction = CheckForTriCountInfractions(accusedImporter);
+            if (tricountInfraction != null && tricountInfraction.Count > 0)
+            {
+                result.AddRange(tricountInfraction);
+            }
+
             return result;
         }
 
@@ -201,7 +207,61 @@ namespace TRIPP.LexImperialis.Editor
             return result;
         }
 
-        private bool HasOverlappingTriangles(Mesh mesh, Vector2[] uvs)
+        private List<Infraction> CheckForTriCountInfractions(ModelImporter modelImporter)
+        {
+            List<Infraction> result = new List<Infraction>();
+            GameObject rootObject = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GetAssetPath(modelImporter));
+            int lod4MaxTriCount = 1;
+            int maxTriCount = 1;
+
+            void checkTriangleCounts(Mesh mesh, int lod4Max, int generalMax, ref List<Infraction> resultList)
+            {
+                int triCount = mesh.triangles.Length;
+                if (mesh.name.Contains("LOD4"))
+                {
+                    if (triCount > lod4MaxTriCount)
+                    {
+                        result.Add(new Infraction
+                        {
+                            isFixable = false,
+                            message = $"{mesh.name} - {mesh.GetInstanceID()} exceeds the Tri Count limit for LOD4s"
+                        });
+                        return;
+                    }
+                }
+
+                if (triCount > maxTriCount)
+                    result.Add(new Infraction
+                    {
+                        isFixable = false,
+                        message = $"{mesh.name} - {mesh.GetInstanceID()} exceeds the Tri Count limit for meshes in general"
+                    });
+            }
+
+            List<Mesh> meshList = GetSubMeshes(modelImporter);
+
+            foreach(Mesh m in meshList)
+            {
+                checkTriangleCounts(m, lod4MaxTriCount, maxTriCount, ref result);
+            }
+
+            //If the root has a mesh
+            //if (rootObject.GetComponent<MeshFilter>() != null)
+            //    checkTriangleCounts(rootObject.GetComponent<MeshFilter>(), lod4MaxTriCount, maxTriCount, ref result);
+            //if has children, check them as well
+            /*if(rootObject.GetComponentInChildren<MeshFilter>() != null)
+                foreach (MeshFilter m in rootObject.GetComponentsInChildren<MeshFilter>())
+                {
+                    Debug.Log(rootObject.name);
+                    checkTriangleCounts(m, lod4MaxTriCount, maxTriCount, ref result);
+                }
+            */
+            return result;
+
+        }
+
+
+            private bool HasOverlappingTriangles(Mesh mesh, Vector2[] uvs)
         {
             int[] triangles = mesh.triangles;
 
