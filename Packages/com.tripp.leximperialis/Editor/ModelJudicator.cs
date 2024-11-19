@@ -8,6 +8,7 @@ namespace TRIPP.LexImperialis.Editor
     [CreateAssetMenu(fileName = "ModelJudicator", menuName = "ScriptableObjects/LexImperialis/ModelJudicator")]
     public class ModelJudicator : ImporterJudicator
     {
+        public int maxTriangleCount = 1000;
         public override Judgment Adjudicate(Object accused)
         {
             Judgment judgment = base.Adjudicate(accused);
@@ -56,7 +57,7 @@ namespace TRIPP.LexImperialis.Editor
                 result.AddRange(emptyNodeInfractions);
             }
 
-            List<Infraction> tricountInfraction = CheckForTriCountInfractions(accusedImporter);
+            List<Infraction> tricountInfraction = CheckForTriCountInfractions(accusedImporter, true);
             if (tricountInfraction != null && tricountInfraction.Count > 0)
             {
                 result.AddRange(tricountInfraction);
@@ -205,6 +206,53 @@ namespace TRIPP.LexImperialis.Editor
             }
 
             return result;
+        }
+
+        private List<Infraction> CheckForTriCountInfractions(ModelImporter modelImporter, bool useOverload = false)
+        {
+            List<Infraction> result = null;
+            List<Mesh> subMeshes = GetSubMeshes(modelImporter);
+            GameObject rootObject = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GetAssetPath(modelImporter));
+
+
+            if (rootObject.name.Contains("LOD4"))
+            {
+                int triCount = 0;
+                foreach (Mesh subMesh in subMeshes)
+                { 
+                    triCount += subMesh.triangles.Length;
+                }
+
+                if(triCount > maxTriangleCount)
+                {
+                    result = new List<Infraction>
+                    {
+                        new Infraction
+                        {
+                            isFixable = false,
+                            message = $"{rootObject.name} - {modelImporter.GetInstanceID()} exceeds the Tri Count limit for LOD4s"
+                        }
+                    };
+                }
+            }
+
+            foreach (Mesh subMesh in subMeshes)
+            {
+                if (subMesh.name.Contains("LOD4") && subMesh.triangles.Length > maxTriangleCount)
+                {
+                    result = new List<Infraction>
+                    {
+                        new Infraction
+                        {
+                            isFixable = false,
+                            message = $"{rootObject.name} - {modelImporter.GetInstanceID()} exceeds the Tri Count limit for LOD4s"
+                        }
+                    };
+                }
+            }
+
+            return result;
+
         }
 
         private List<Infraction> CheckForTriCountInfractions(ModelImporter modelImporter)
