@@ -1,9 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using Unity.VisualScripting.YamlDotNet.Core.Tokens;
 using UnityEditor;
 using UnityEditor.Presets;
 using UnityEngine;
@@ -15,7 +10,7 @@ namespace TRIPP.LexImperialis.Editor
     public class ImporterJudicator : Judicator
     {
         public int floatComparisonPrecision = 4;
-        public string[] phantomProperties;
+        public List<string> propertyPathsToIgnore;
         public List<Preset> presets;
 
         public override Judgment Adjudicate(Object accused)
@@ -32,7 +27,12 @@ namespace TRIPP.LexImperialis.Editor
                     continue;
 
                 List<Infraction> presetInfractions = GetPresetInfractions(importer, preset);
-                if (presetInfractions != null && presetInfractions.Count > 0)
+                if (presetInfractions == null || presetInfractions.Count == 0)
+                {
+                    infractions = null;
+                    break;
+                }
+                else
                 {
                     if (infractions == null)
                         infractions = new List<Infraction>();
@@ -59,17 +59,17 @@ namespace TRIPP.LexImperialis.Editor
             List<Infraction> infractions = null;
 
             if(preset == null || accusedObject == null)
-            {
                 return infractions;
-            }
 
             if(preset.DataEquals(accusedObject))
                 return infractions;
 
             SerializedObject accusedSerializedObject = new SerializedObject(accusedObject);
-            SerializedObject presetSerializedObject = new SerializedObject(preset);
-            foreach(PropertyModification propertyModification in preset.PropertyModifications)
+            foreach (PropertyModification propertyModification in preset.PropertyModifications)
             {
+                if(propertyPathsToIgnore.Contains(propertyModification.propertyPath))
+                    continue;
+
                 SerializedProperty accusedProperty = accusedSerializedObject.FindProperty(propertyModification.propertyPath);
                 
                 if (accusedProperty == null)
@@ -80,14 +80,14 @@ namespace TRIPP.LexImperialis.Editor
 
                 ComparisonStrings comparisonStrings = ValueToString(accusedProperty, propertyModification.value);
                 if (comparisonStrings.presetValue != comparisonStrings.accusedValue)
-                { 
+                {
                     if (infractions == null)
                         infractions = new List<Infraction>();
 
                     infractions.Add(new Infraction
                     {
                         isFixable = true,
-                        message = $"{accusedProperty.displayName}: expected {comparisonStrings.presetValue}, found {comparisonStrings.accusedValue}"
+                        message = $"{accusedProperty.propertyPath} : expected {comparisonStrings.presetValue}, found {comparisonStrings.accusedValue}"
                     });
                 }
             }
