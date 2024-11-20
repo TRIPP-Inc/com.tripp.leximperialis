@@ -94,7 +94,7 @@ namespace TRIPP.LexImperialis.Editor
                     bool hasFlippedUVs2 = HasFlippedUVs(mesh.uv2, mesh.triangles, mesh);
                     bool hasOverlappingUVs2 = HasOverlappingTriangles(mesh, mesh.uv2);
                     
-                    if(hasFlippedUVs2&& hasOverlappingUVs2)
+                    if(hasFlippedUVs2 || hasOverlappingUVs2)
                     result.Add(new Infraction
                     {
                         message = AssembleUVMessage(mesh.name, hasFlippedUVs2, hasOverlappingUVs2),
