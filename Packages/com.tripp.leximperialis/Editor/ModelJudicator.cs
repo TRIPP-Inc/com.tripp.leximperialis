@@ -14,16 +14,7 @@ namespace TRIPP.LexImperialis.Editor
             ModelImporter modelImporter = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(accused)) as ModelImporter;
             List<Infraction> infractions = CheckForInfractions(judgment, modelImporter);
             if (infractions != null && infractions.Count > 0)
-            {
-                if(judgment == null)
-                {
-                    judgment = new Judgment
-                    {
-                        accused = accused,
-                        judicator = this,
-                        infractions = new List<Infraction>()
-                    };
-                }
+            {               
 
                 judgment.infractions.AddRange(infractions);
             }
@@ -102,6 +93,8 @@ namespace TRIPP.LexImperialis.Editor
                 {
                     bool hasFlippedUVs2 = HasFlippedUVs(mesh.uv2, mesh.triangles, mesh);
                     bool hasOverlappingUVs2 = HasOverlappingTriangles(mesh, mesh.uv2);
+                    
+                    if(hasFlippedUVs2&& hasOverlappingUVs2)
                     result.Add(new Infraction
                     {
                         message = AssembleUVMessage(mesh.name, hasFlippedUVs2, hasOverlappingUVs2),
