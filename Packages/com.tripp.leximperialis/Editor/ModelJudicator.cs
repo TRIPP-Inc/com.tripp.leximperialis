@@ -10,16 +10,25 @@ namespace TRIPP.LexImperialis.Editor
     {
         public override Judgment Adjudicate(Object accused)
         {
-            Judgment judgment = base.Adjudicate(accused);
+            Judgment judgement = base.Adjudicate(accused);
             ModelImporter modelImporter = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(accused)) as ModelImporter;
-            List<Infraction> infractions = CheckForInfractions(judgment, modelImporter);
+            List<Infraction> infractions = CheckForInfractions(judgement, modelImporter);
             if (infractions != null && infractions.Count > 0)
             {               
+                if(judgement == null)
+                {
+                    judgement = new Judgment
+                    {
+                        accused = accused,
+                        judicator = this,
+                        infractions = new List<Infraction>()
+                    };
+                }
 
-                judgment.infractions.AddRange(infractions);
+                judgement.infractions.AddRange(infractions);
             }
 
-            return judgment;
+            return judgement;
         }
 
         private List<Infraction> CheckForInfractions(Judgment judgment, ModelImporter accusedImporter)
@@ -72,10 +81,9 @@ namespace TRIPP.LexImperialis.Editor
             bool hasFlippedUVs1 = HasFlippedUVs(mesh.uv, mesh.triangles, mesh);
             bool hasOverlappingUVs1 = HasOverlappingTriangles(mesh, mesh.uv);
             bool primaryUVsGood = !hasFlippedUVs1 && !hasOverlappingUVs1;
-            bool hasSecondaryUVSet = false;
+            bool hasSecondaryUVSet = HasSecondaryUVSet(mesh);
             if (primaryUVsGood)
             {
-                hasSecondaryUVSet = HasSecondaryUVSet(mesh);
                 if (hasSecondaryUVSet)
                 {
                     result.Add(new Infraction 
