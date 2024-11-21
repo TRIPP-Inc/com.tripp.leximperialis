@@ -82,7 +82,7 @@ namespace TRIPP.LexImperialis.Editor
                     }
 
                     // Check maxParticles against the preset
-                    var mainModule = particleSystem.main;
+                    ParticleSystem.MainModule mainModule = particleSystem.main;
                     SerializedObject presetObject = new SerializedObject(preset);
                     SerializedProperty maxParticlesProperty = presetObject.FindProperty("maxParticles");
 
