@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor;
+using System.Linq;
 
 namespace TRIPP.LexImperialis.Editor
 {
@@ -8,144 +10,196 @@ namespace TRIPP.LexImperialis.Editor
     {
         public override Judgment Adjudicate(Object accused)
         {
-            // Call the base class method to get the initial judgment
-            Judgment judgment = base.Adjudicate(accused);
-
-            // Cast the accused object to GameObject directly
-            GameObject gameObject = (GameObject)accused;
-
-            // Retrieve the mesh associated with the GameObject
-            Mesh accusedMesh = GetMesh(gameObject);
-
-            // Log an error if no mesh is found and return null if there's no mesh
-            if (accusedMesh == null)
-            {
-                Debug.LogError($"{gameObject.name} has no mesh associated with it.");
-                return null; // Return null if there's no mesh
-            }
-
-            // If judgment is null, initialize it with details about the accused object
-            if (judgment == null)
-            {
-                judgment = new Judgment
+            Judgment judgement = base.Adjudicate(accused);
+            ModelImporter modelImporter = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(accused)) as ModelImporter;
+            List<Infraction> infractions = CheckForInfractions(modelImporter);
+            if (infractions != null && infractions.Count > 0)
+            {               
+                if(judgement == null)
                 {
-                    accused = accused,      // Set the object being judged
-                    judicator = this,       // Reference to the current judicator instance
-                    infractions = new List<Infraction>() // Initialize the list for infractions
-                };
+                    judgement = new Judgment
+                    {
+                        accused = accused,
+                        judicator = this,
+                        infractions = new List<Infraction>()
+                    };
+                }
+
+                judgement.infractions.AddRange(infractions);
             }
 
-            // Check the mesh for any UV infractions and add them to the judgment
-            CheckForInfractions(judgment, accusedMesh, gameObject.name);
-
-            // If no infractions were found, return null judgment
-            if (judgment.infractions.Count == 0)
-            {
-                return null; // Return null judgment if no infractions are found
-            }
-
-            return judgment; // Return the populated judgment
+            return judgement;
         }
 
-        private Mesh GetMesh(GameObject gameObject)
+        private List<Infraction> CheckForInfractions(ModelImporter accusedImporter)
         {
-            // Attempt to get the MeshFilter component from the provided GameObject
-            if (gameObject.TryGetComponent(out MeshFilter meshFilter))
+            List<Infraction> result = new List<Infraction>();
+            List<Mesh> meshes = GetSubMeshes(accusedImporter);
+            foreach(Mesh mesh in meshes)
             {
-                // If the MeshFilter component is found, return its shared mesh
-                return meshFilter.sharedMesh;
+                List<Infraction> uvSetInfractions = CheckForUVSetInfractions(mesh);
+                if(uvSetInfractions != null && uvSetInfractions.Count > 0)
+                {
+                    result.AddRange(uvSetInfractions);
+                }
             }
-            // If no MeshFilter is found, attempt to get the MeshRenderer component
-            else if (gameObject.TryGetComponent(out MeshRenderer meshRenderer))
+
+            Infraction meshOriginInfraction = CheckMeshOriginInfraction(accusedImporter);
+            if (meshOriginInfraction != null)
             {
-                // If the MeshRenderer is found, retrieve its associated MeshFilter and return its shared mesh
-                // Use null-conditional operator to safely access the MeshFilter's shared mesh
-                return meshRenderer.GetComponent<MeshFilter>()?.sharedMesh;
+                result.Add(meshOriginInfraction);
             }
-            return null;
+
+            List<Infraction> emptyNodeInfractions = CheckForEmptyNodeInfactions(accusedImporter);
+            if(emptyNodeInfractions != null && emptyNodeInfractions.Count > 0)
+            {
+                result.AddRange(emptyNodeInfractions);
+            }
+
+            return result;
         }
 
-        private void CheckForInfractions(Judgment judgment, Mesh mesh, string objectName)
+        private List<Mesh> GetSubMeshes(ModelImporter modelImporter)
         {
-            // Check for primary UV set issues
+            List<Mesh> subMeshes = new List<Mesh>();
+            string assetPath = AssetDatabase.GetAssetPath(modelImporter);
+            Object[] assets = AssetDatabase.LoadAllAssetsAtPath(assetPath);
+            foreach (Object asset in assets)
+            {
+                if (asset is Mesh mesh)
+                {
+                    subMeshes.Add(mesh);
+                }
+            }
+
+            return subMeshes;
+        }
+
+        private List<Infraction> CheckForUVSetInfractions(Mesh mesh)
+        {
+            List<Infraction> result = new List<Infraction>();
             bool hasFlippedUVs1 = HasFlippedUVs(mesh.uv, mesh.triangles, mesh);
             bool hasOverlappingUVs1 = HasOverlappingTriangles(mesh, mesh.uv);
-
-            // Check if the primary UV set is good
             bool primaryUVsGood = !hasFlippedUVs1 && !hasOverlappingUVs1;
-
-            // Check if there is a secondary UV set
             bool hasSecondaryUVSet = HasSecondaryUVSet(mesh);
-
-            // If the primary UV set is valid, log the message and check secondary UV set
             if (primaryUVsGood)
             {
                 if (hasSecondaryUVSet)
                 {
-                    // Notify the user that the second UV set is unnecessary
-                    AddToJudgement(judgment, new Infraction
-                    {
-                        isFixable = true,
-                        message = $"{objectName}: The primary UV set is valid, so the secondary UV set is not needed."
-                    });
-                }
-                return; // Exit since primary UV set is good
-            }
-
-            // Proceed to check the secondary UV set if the primary UV set is not good
-            bool hasFlippedUVs2 = hasSecondaryUVSet && HasFlippedUVs(mesh.uv2, mesh.triangles, mesh);
-            bool hasOverlappingUVs2 = hasSecondaryUVSet && HasOverlappingTriangles(mesh, mesh.uv2);
-
-            // Report infractions for the primary UV set
-            if (hasFlippedUVs1)
-            {
-                AddToJudgement(judgment, new Infraction
-                {
-                    isFixable = false,
-                    message = $"{objectName} has flipped UVs in the primary UV set."
-                });
-            }
-
-            if (hasOverlappingUVs1)
-            {
-                AddToJudgement(judgment, new Infraction
-                {
-                    isFixable = false,
-                    message = $"{objectName} has overlapping UVs in the primary UV set."
-                });
-            }
-
-            // Only check the secondary UV set if it exists
-            if (hasSecondaryUVSet)
-            {
-                if (hasFlippedUVs2)
-                {
-                    AddToJudgement(judgment, new Infraction
+                    result.Add(new Infraction 
                     {
                         isFixable = false,
-                        message = $"{objectName} has flipped UVs in the secondary UV set."
+                        message = ($"{mesh.name}'s primary UV set is valid. Secondary UV set should not have been used.") 
                     });
                 }
-
-                if (hasOverlappingUVs2)
-                {
-                    AddToJudgement(judgment, new Infraction
-                    {
-                        isFixable = false,
-                        message = $"{objectName} has overlapping UVs in the secondary UV set."
-                    });
-                }
+                else
+                    return result;
             }
             else
             {
-                AddToJudgement(judgment, new Infraction
+                if (hasSecondaryUVSet)
                 {
-                    isFixable = false,
-                    message = $"{objectName} is missing a secondary UV set for lightmaps."
-                });
+                    bool hasFlippedUVs2 = HasFlippedUVs(mesh.uv2, mesh.triangles, mesh);
+                    bool hasOverlappingUVs2 = HasOverlappingTriangles(mesh, mesh.uv2);
+                    
+                    if(hasFlippedUVs2 || hasOverlappingUVs2)
+                    result.Add(new Infraction
+                    {
+                        message = AssembleUVMessage(mesh.name, hasFlippedUVs2, hasOverlappingUVs2),
+                        isFixable = false
+                    });
+                }
+                else
+                {
+                    result.Add(new Infraction{
+                        message = AssembleUVMessage(mesh.name, hasFlippedUVs1, hasOverlappingUVs1),
+                        isFixable = false
+                    });
+                }
             }
 
-            // If infractions found, judgment remains populated
+            return result;
+        }
+
+        private string AssembleUVMessage(string objectName, bool hasFlippedUVs, bool hasOverlappingUVs, bool isSecondary = false)
+        {
+            string uvSetName = isSecondary ? "secondary" : "primary";
+            string message = $"{objectName} has issues with the {uvSetName} UV set:";
+            if (hasFlippedUVs)
+            {
+                message += " [ Flipped UVs ]";
+            }
+            if (hasOverlappingUVs)
+            {
+                message += " [ Overlapping UVs ]";
+            }
+            return message;
+        }
+
+        private List<Infraction> CheckForEmptyNodeInfactions(ModelImporter modelImporter)
+        {
+            List<Infraction> result = new List<Infraction>();
+            GameObject rootObject = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GetAssetPath(modelImporter));
+            Transform rigRoot = null;
+            SkinnedMeshRenderer skinnedMeshRenderer = rootObject.GetComponentInChildren<SkinnedMeshRenderer>();
+            if (skinnedMeshRenderer != null)
+            {
+                rigRoot = skinnedMeshRenderer.rootBone;
+            }
+
+            List<Transform> rigTransforms = new List<Transform>();
+            if (rigRoot != null)
+            {
+                rigTransforms = rootObject.GetComponentsInChildren<Transform>().ToList();
+            }
+
+            foreach (Transform transform in rootObject.GetComponentsInChildren<Transform>())
+            {
+                if (rigTransforms.Contains(transform))
+                    continue;
+
+                if (transform.childCount == 0 && transform.GetComponents<Component>().Count() < 2)
+                {
+                    result.Add(new Infraction
+                    {
+                        isFixable = false,
+                        message = $"{transform.name} - {transform.GetInstanceID()} is an empty node"
+                    });
+                }
+            }
+
+            return result;
+        }
+
+        private Infraction CheckMeshOriginInfraction(ModelImporter modelImporter)
+        {
+            Infraction result = null;
+            GameObject rootObject = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GetAssetPath(modelImporter));
+            if (rootObject.GetComponents<Component>().Count() > 1)
+            {
+                if(rootObject.transform.localPosition != Vector3.zero)
+                result = new Infraction
+                {
+                    isFixable = false,
+                    message = $"{rootObject.name}: The pivot is not set at the origin (0,0,0)"
+                };
+            }
+            else if(rootObject.GetComponents<Component>().Count() == 1)
+            {
+                for (int i = 0; i < rootObject.transform.childCount; i++)
+                {
+                    if (rootObject.transform.GetChild(i).transform.localPosition != Vector3.zero)
+                    {
+                        result = new Infraction
+                        {
+                            isFixable = false,
+                            message = $"{rootObject.name} - {rootObject.transform.GetChild(i).name}: The pivot is not set at the origin (0,0,0)"
+                        };
+                    }
+                }
+            }
+
+            return result;
         }
 
         private bool HasOverlappingTriangles(Mesh mesh, Vector2[] uvs)
