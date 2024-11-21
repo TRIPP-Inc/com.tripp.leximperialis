@@ -17,14 +17,11 @@ namespace TRIPP.LexImperialis.Editor
                 return null; // Return null if not a prefab
             }
 
-            // Prepare a list to collect infractions
-            List<Infraction> infractions = new List<Infraction>();
-
-            // Check for Particle Systems in the prefab
-            CheckParticleSystems(infractions, prefab);
+            // Check for Particle Systems in the prefab and get infractions
+            List<Infraction> infractions = CheckParticleSystems(prefab);
 
             // If no infractions were found, return null to suppress default messages
-            if (infractions.Count == 0)
+            if (infractions == null || infractions.Count == 0)
             {
                 return null;
             }
@@ -40,37 +37,32 @@ namespace TRIPP.LexImperialis.Editor
             return judgment;
         }
 
-        private void CheckParticleSystems(List<Infraction> infractions, GameObject prefab)
+        private List<Infraction> CheckParticleSystems(GameObject prefab)
         {
             if (prefab == null)
             {
                 Debug.LogError("Prefab is null. Cannot check particle systems.");
-                return;
+                return null;
             }
 
             ParticleSystem[] particleSystems = prefab.GetComponentsInChildren<ParticleSystem>(true);
             if (particleSystems == null || particleSystems.Length == 0)
             {
-                Debug.LogWarning("No Particle Systems found in the prefab.");
-                return;
+                // Silently handle cases where no Particle Systems are found.
+                return null;
             }
 
             if (presets == null || presets.Count == 0)
             {
                 Debug.LogWarning("No presets available for comparison.");
-                return;
+                return null;
             }
+
+            List<Infraction> infractions = new List<Infraction>();
 
             foreach (ParticleSystem particleSystem in particleSystems)
             {
-                if (particleSystem == null)
-                {
-                    Debug.LogWarning("Encountered a null ParticleSystem component.");
-                    continue;
-                }
-
                 bool matched = false;
-                List<Infraction> collectedInfractions = new List<Infraction>();
 
                 foreach (var preset in presets)
                 {
@@ -83,53 +75,46 @@ namespace TRIPP.LexImperialis.Editor
                     // Use the inherited method to check infractions for each ParticleSystem
                     List<Infraction> presetInfractions = GetPresetInfractions(particleSystem, preset);
 
-                    // Special case for "Max Particles" property
-                    if (presetInfractions != null)
-                    {
-                        foreach (var infraction in presetInfractions)
-                        {
-                            // Check if the infraction message is related to "Max Particles"
-                            if (infraction.message.Contains("maxNumParticles"))
-                            {
-                                // Get the Max Particles value from the ParticleSystem
-                                var mainModule = particleSystem.main;
-                                if (mainModule.maxParticles <= 512)
-                                {
-                                    // If the value is less than or equal to 512, skip adding this infraction
-                                    continue;
-                                }
-                            }
-
-                            // Add the infraction if it doesn't match the special case
-                            collectedInfractions.Add(infraction);
-                        }
-                    }
-
-                    if (presetInfractions == null || presetInfractions.Count == 0)
+                    if (presetInfractions == null)
                     {
                         matched = true;
                         break;
                     }
+
+                    // Check maxParticles against the preset
+                    var mainModule = particleSystem.main;
+                    SerializedObject presetObject = new SerializedObject(preset);
+                    SerializedProperty maxParticlesProperty = presetObject.FindProperty("maxParticles");
+
+                    if (maxParticlesProperty != null && maxParticlesProperty.propertyType == SerializedPropertyType.Integer)
+                    {
+                        int presetMaxParticles = maxParticlesProperty.intValue;
+
+                        // Remove infractions related to maxParticles if within the limit
+                        presetInfractions.RemoveAll(infraction =>
+                            infraction.message.Contains("maxParticles") &&
+                            mainModule.maxParticles <= presetMaxParticles);
+                    }
+
+                    // Add remaining infractions to the main infractions list
+                    infractions.AddRange(presetInfractions);
                 }
 
+                // If a match was found, skip adding a "does not adhere" infraction
                 if (matched)
                 {
                     continue;
                 }
 
-                if (collectedInfractions.Count > 0)
+                // Add a general infraction if no presets matched
+                infractions.Add(new Infraction
                 {
-                    infractions.AddRange(collectedInfractions);
-                }
-                else
-                {
-                    infractions.Add(new Infraction
-                    {
-                        isFixable = false,
-                        message = $"{particleSystem.name} does not adhere to any of the provided presets."
-                    });
-                }
+                    isFixable = false,
+                    message = $"{particleSystem.name} does not adhere to any of the provided presets."
+                });
             }
+
+            return infractions;
         }
 
         public override string ServitudeImperpituis(Judgment judgment, Infraction infraction)

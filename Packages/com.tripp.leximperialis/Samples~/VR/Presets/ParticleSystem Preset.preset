@@ -6,7 +6,7 @@ Preset:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: ParticleSystemPreliminaries
+  m_Name: ParticleSystem Preset
   m_TargetType:
     m_NativeTypeID: 198
     m_ManagedTypePPtr: {fileID: 0}
@@ -17114,7 +17114,6 @@ Preset:
   - lengthInSec
   - ShapeModule
   - VelocityModule
-  - ClampVelocityModule
   - LifetimeByEmitterSpeedModule
   - ForceModule
   - ColorModule
@@ -17130,3 +17129,4 @@ Preset:
   - SubModule
   - UVModule
   - CustomDataModule
+  - InheritVelocityModule
