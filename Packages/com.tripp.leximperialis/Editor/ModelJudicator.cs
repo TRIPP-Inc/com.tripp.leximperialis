@@ -208,52 +208,7 @@ namespace TRIPP.LexImperialis.Editor
             return result;
         }
 
-        private List<Infraction> CheckForTriCountInfractions(ModelImporter modelImporter, bool useOverload = false)
-        {
-            List<Infraction> result = null;
-            List<Mesh> subMeshes = GetSubMeshes(modelImporter);
-            GameObject rootObject = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GetAssetPath(modelImporter));
-
-
-            if (rootObject.name.Contains("LOD4"))
-            {
-                int triCount = 0;
-                foreach (Mesh subMesh in subMeshes)
-                { 
-                    triCount += subMesh.triangles.Length;
-                }
-
-                if(triCount > maxTriangleCount)
-                {
-                    result = new List<Infraction>
-                    {
-                        new Infraction
-                        {
-                            isFixable = false,
-                            message = $"{rootObject.name} - {modelImporter.GetInstanceID()} exceeds the Tri Count limit for LOD4s"
-                        }
-                    };
-                }
-            }
-
-            foreach (Mesh subMesh in subMeshes)
-            {
-                if (subMesh.name.Contains("LOD4") && subMesh.triangles.Length > maxTriangleCount)
-                {
-                    result = new List<Infraction>
-                    {
-                        new Infraction
-                        {
-                            isFixable = false,
-                            message = $"{rootObject.name} - {modelImporter.GetInstanceID()} exceeds the Tri Count limit for LOD4s"
-                        }
-                    };
-                }
-            }
-
-            return result;
-
-        }
+        
 
         private List<Infraction> CheckForTriCountInfractions(ModelImporter modelImporter)
         {
@@ -299,33 +254,7 @@ namespace TRIPP.LexImperialis.Editor
                     }
                 }
 
-                /*if (triCount > maxTriCount)
-                    result.Add(new Infraction
-                    {
-                        isFixable = false,
-                        message = $"{mesh.name} - {mesh.GetInstanceID()} exceeds the Tri Count limit for meshes in general"
-                    });*/
-            
-
-
-            //List<Mesh> meshList = GetSubMeshes(modelImporter);
-
-            /*foreach (Mesh m in meshList)
-            {
-                checkTriangleCounts(m, lod4MaxTriCount, maxTriCount, ref result);
-            }*/
-
-            //If the root has a mesh
-            //if (rootObject.GetComponent<MeshFilter>() != null)
-            //    checkTriangleCounts(rootObject.GetComponent<MeshFilter>(), lod4MaxTriCount, maxTriCount, ref result);
-            //if has children, check them as well
-            /*if(rootObject.GetComponentInChildren<MeshFilter>() != null)
-                foreach (MeshFilter m in rootObject.GetComponentsInChildren<MeshFilter>())
-                {
-                    Debug.Log(rootObject.name);
-                    checkTriangleCounts(m, lod4MaxTriCount, maxTriCount, ref result);
-                }
-            */
+                
             return result;
 
         }
