@@ -12,7 +12,7 @@ namespace TRIPP.LexImperialis.Editor
         {
             Judgment judgement = base.Adjudicate(accused);
             ModelImporter modelImporter = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(accused)) as ModelImporter;
-            List<Infraction> infractions = CheckForInfractions(judgement, modelImporter);
+            List<Infraction> infractions = CheckForInfractions(modelImporter);
             if (infractions != null && infractions.Count > 0)
             {               
                 if(judgement == null)
@@ -31,7 +31,7 @@ namespace TRIPP.LexImperialis.Editor
             return judgement;
         }
 
-        private List<Infraction> CheckForInfractions(Judgment judgment, ModelImporter accusedImporter)
+        private List<Infraction> CheckForInfractions(ModelImporter accusedImporter)
         {
             List<Infraction> result = new List<Infraction>();
             List<Mesh> meshes = GetSubMeshes(accusedImporter);
@@ -47,7 +47,7 @@ namespace TRIPP.LexImperialis.Editor
             Infraction meshOriginInfraction = CheckMeshOriginInfraction(accusedImporter);
             if (meshOriginInfraction != null)
             {
-                AddToJudgement(judgment, meshOriginInfraction);
+                result.Add(meshOriginInfraction);
             }
 
             List<Infraction> emptyNodeInfractions = CheckForEmptyNodeInfactions(accusedImporter);
