@@ -34,7 +34,7 @@ namespace TRIPP.LexImperialis.Editor
                 judgment = new Judgment { accused = accused, judicator = this };
                 if (illegalShaderAndShaderKeywordDictionary[examineeMaterial.shader.name].Count == 0)
                 {
-                    AddToJudgement(judgment, new Infraction { message = "Illegal Shader ", isFixable = false});
+                    CreateOrAddInfractionsToJudgment(new Infraction { message = "Illegal Shader ", isFixable = false}, judgment, accused);
                 }
                 else if (illegalShaderAndShaderKeywordDictionary[examineeMaterial.shader.name].Count > 0)
                 {
@@ -44,11 +44,11 @@ namespace TRIPP.LexImperialis.Editor
                         string[] shaderKeywords = examineeMaterial.shader.keywordSpace.keywordNames;
                         if (message.Contains("Invalid"))
                         {
-                            AddToJudgement(judgment, new Infraction { message = message, isFixable = false });
+                            CreateOrAddInfractionsToJudgment(new Infraction { message = message, isFixable = false }, judgment, accused);
                         }
                         else
                         {
-                            AddToJudgement(judgment, new Infraction { message = message, isFixable = true });
+                            CreateOrAddInfractionsToJudgment(new Infraction { message = message, isFixable = true }, judgment, accused);
                         }
                     }
                 }
