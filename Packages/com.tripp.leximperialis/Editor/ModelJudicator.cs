@@ -8,6 +8,7 @@ namespace TRIPP.LexImperialis.Editor
     [CreateAssetMenu(fileName = "ModelJudicator", menuName = "ScriptableObjects/LexImperialis/ModelJudicator")]
     public class ModelJudicator : ImporterJudicator
     {
+        public int maxTriangleCountLOD4 = 1000;
         public override Judgment Adjudicate(Object accused)
         {
             Judgment judgement = base.Adjudicate(accused);
@@ -54,6 +55,12 @@ namespace TRIPP.LexImperialis.Editor
             if(emptyNodeInfractions != null && emptyNodeInfractions.Count > 0)
             {
                 result.AddRange(emptyNodeInfractions);
+            }
+
+            List<Infraction> tricountInfraction = CheckForTriCountInfractions(accusedImporter);
+            if (tricountInfraction != null && tricountInfraction.Count > 0)
+            {
+                result.AddRange(tricountInfraction);
             }
 
             return result;
@@ -201,6 +208,58 @@ namespace TRIPP.LexImperialis.Editor
 
             return result;
         }
+
+        
+
+        private List<Infraction> CheckForTriCountInfractions(ModelImporter modelImporter)
+        {
+            List<Infraction> result = new List<Infraction>();
+            GameObject rootObject = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GetAssetPath(modelImporter));
+            List<Mesh> subMeshes = GetSubMeshes(modelImporter);
+
+
+                int triCount = 0;
+                if (rootObject.name.Contains("LOD4"))
+                {
+                    
+                    foreach (Mesh subMesh in subMeshes)
+                    {
+                        triCount += subMesh.triangles.Length;
+                    }
+
+                    if (triCount > maxTriangleCountLOD4)
+                    {
+                        result = new List<Infraction>
+                    {
+                        new Infraction
+                        {
+                            isFixable = false,
+                            message = $"{rootObject.name} - {modelImporter.GetInstanceID()} exceeds the Tri Count limit for LOD4s"
+                        }
+                    };
+                    }
+                }
+
+                foreach (Mesh subMesh in subMeshes)
+                {
+                    if (subMesh.name.Contains("LOD4") && subMesh.triangles.Length > maxTriangleCountLOD4)
+                    {
+                        result = new List<Infraction>
+                    {
+                        new Infraction
+                        {
+                            isFixable = false,
+                            message = $"{rootObject.name} - {modelImporter.GetInstanceID()} exceeds the Tri Count limit for LOD4s"
+                        }
+                    };
+                    }
+                }
+
+                
+            return result;
+
+        }
+
 
         private bool HasOverlappingTriangles(Mesh mesh, Vector2[] uvs)
         {
