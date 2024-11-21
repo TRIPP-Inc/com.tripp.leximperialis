@@ -261,7 +261,7 @@ namespace TRIPP.LexImperialis.Editor
         }
 
 
-            private bool HasOverlappingTriangles(Mesh mesh, Vector2[] uvs)
+        private bool HasOverlappingTriangles(Mesh mesh, Vector2[] uvs)
         {
             int[] triangles = mesh.triangles;
 
