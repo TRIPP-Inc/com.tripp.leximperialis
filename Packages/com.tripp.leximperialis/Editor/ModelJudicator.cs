@@ -8,7 +8,7 @@ namespace TRIPP.LexImperialis.Editor
     [CreateAssetMenu(fileName = "ModelJudicator", menuName = "ScriptableObjects/LexImperialis/ModelJudicator")]
     public class ModelJudicator : ImporterJudicator
     {
-        public int maxTriangleCount = 1000;
+        public int maxTriangleCountLOD4 = 1000;
         public override Judgment Adjudicate(Object accused)
         {
             Judgment judgement = base.Adjudicate(accused);
@@ -227,7 +227,7 @@ namespace TRIPP.LexImperialis.Editor
                         triCount += subMesh.triangles.Length;
                     }
 
-                    if (triCount > maxTriangleCount)
+                    if (triCount > maxTriangleCountLOD4)
                     {
                         result = new List<Infraction>
                     {
@@ -242,7 +242,7 @@ namespace TRIPP.LexImperialis.Editor
 
                 foreach (Mesh subMesh in subMeshes)
                 {
-                    if (subMesh.name.Contains("LOD4") && subMesh.triangles.Length > maxTriangleCount)
+                    if (subMesh.name.Contains("LOD4") && subMesh.triangles.Length > maxTriangleCountLOD4)
                     {
                         result = new List<Infraction>
                     {
