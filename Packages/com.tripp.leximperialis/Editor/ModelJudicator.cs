@@ -11,14 +11,14 @@ namespace TRIPP.LexImperialis.Editor
         public int maxTriangleCount = 1000;
         public override Judgment Adjudicate(Object accused)
         {
-            Judgment judgment = base.Adjudicate(accused);
+            Judgment judgement = base.Adjudicate(accused);
             ModelImporter modelImporter = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(accused)) as ModelImporter;
-            List<Infraction> infractions = CheckForInfractions(judgment, modelImporter);
+            List<Infraction> infractions = CheckForInfractions(modelImporter);
             if (infractions != null && infractions.Count > 0)
-            {
-                if(judgment == null)
+            {               
+                if(judgement == null)
                 {
-                    judgment = new Judgment
+                    judgement = new Judgment
                     {
                         accused = accused,
                         judicator = this,
@@ -26,13 +26,13 @@ namespace TRIPP.LexImperialis.Editor
                     };
                 }
 
-                judgment.infractions.AddRange(infractions);
+                judgement.infractions.AddRange(infractions);
             }
 
-            return judgment;
+            return judgement;
         }
 
-        private List<Infraction> CheckForInfractions(Judgment judgment, ModelImporter accusedImporter)
+        private List<Infraction> CheckForInfractions(ModelImporter accusedImporter)
         {
             List<Infraction> result = new List<Infraction>();
             List<Mesh> meshes = GetSubMeshes(accusedImporter);
@@ -48,7 +48,7 @@ namespace TRIPP.LexImperialis.Editor
             Infraction meshOriginInfraction = CheckMeshOriginInfraction(accusedImporter);
             if (meshOriginInfraction != null)
             {
-                AddToJudgement(judgment, meshOriginInfraction);
+                result.Add(meshOriginInfraction);
             }
 
             List<Infraction> emptyNodeInfractions = CheckForEmptyNodeInfactions(accusedImporter);
@@ -88,10 +88,9 @@ namespace TRIPP.LexImperialis.Editor
             bool hasFlippedUVs1 = HasFlippedUVs(mesh.uv, mesh.triangles, mesh);
             bool hasOverlappingUVs1 = HasOverlappingTriangles(mesh, mesh.uv);
             bool primaryUVsGood = !hasFlippedUVs1 && !hasOverlappingUVs1;
-            bool hasSecondaryUVSet = false;
+            bool hasSecondaryUVSet = HasSecondaryUVSet(mesh);
             if (primaryUVsGood)
             {
-                hasSecondaryUVSet = HasSecondaryUVSet(mesh);
                 if (hasSecondaryUVSet)
                 {
                     result.Add(new Infraction 
@@ -109,6 +108,8 @@ namespace TRIPP.LexImperialis.Editor
                 {
                     bool hasFlippedUVs2 = HasFlippedUVs(mesh.uv2, mesh.triangles, mesh);
                     bool hasOverlappingUVs2 = HasOverlappingTriangles(mesh, mesh.uv2);
+                    
+                    if(hasFlippedUVs2 || hasOverlappingUVs2)
                     result.Add(new Infraction
                     {
                         message = AssembleUVMessage(mesh.name, hasFlippedUVs2, hasOverlappingUVs2),
