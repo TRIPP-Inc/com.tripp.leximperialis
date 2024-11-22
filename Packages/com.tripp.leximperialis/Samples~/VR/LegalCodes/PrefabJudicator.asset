@@ -9,11 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c135377381ec7704d8718038c259440d, type: 3}
-  m_Name: TextureJudicator
+  m_Script: {fileID: 11500000, guid: c2a35965348850c4d819b85a61376619, type: 3}
+  m_Name: PrefabJudicator
   m_EditorClassIdentifier: 
   floatComparisonPrecision: 4
   propertyPathsToIgnore: []
   presets:
-  - {fileID: 2655988077585873504, guid: 5e794f19cc0250d4db5cb0913472a71c, type: 2}
-  - {fileID: 2655988077585873504, guid: 4fec2562254dfc148ad60e73ba553838, type: 2}
+  - {fileID: 2655988077585873504, guid: 7ca390888e3c39940ae0f2b507ab4c4e, type: 2}
