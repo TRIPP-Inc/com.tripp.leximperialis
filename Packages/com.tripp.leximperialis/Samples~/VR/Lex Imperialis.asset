@@ -31,3 +31,6 @@ MonoBehaviour:
   - objectType: Cubemap
     importerType: 9
     judicator: {fileID: 11400000, guid: bbc1c6b49b3316e47bc203a3f9fdf1c2, type: 2}
+  - objectType: GameObject
+    importerType: 6
+    judicator: {fileID: 11400000, guid: 13f6d3def2c91d748baff832beb90877, type: 2}
