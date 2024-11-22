@@ -12,5 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46fd3712901f57b41a03583a0b1b0436, type: 3}
   m_Name: SceneJudicator
   m_EditorClassIdentifier: 
-  fieldOfView: 110
-  aspectRatio: 1
+  platformStandards:
+  - qualityLevelName: Quest2
+    memoryUsageLimitMB: 512
+    maxTriangleCount: 500000
+    maxDrawCalls: 500
+    fieldOfView: 110
+    aspectRatio: 1
+    cameraRotates: 1
+    cameraRotationInterval: 90
