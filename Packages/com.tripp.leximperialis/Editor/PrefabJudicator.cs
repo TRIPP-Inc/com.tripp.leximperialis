@@ -2,13 +2,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Presets;
+using System;
 
 namespace TRIPP.LexImperialis.Editor
 {
     [CreateAssetMenu(fileName = "PrefabJudicator", menuName = "ScriptableObjects/LexImperialis/PrefabJudicator")]
     public class PrefabJudicator : ImporterJudicator
     {
-        public override Judgment Adjudicate(Object accused)
+        public override Judgment Adjudicate(UnityEngine.Object accused)
         {
             // Ensure the accused object is a prefab
             GameObject prefab = accused as GameObject;
@@ -62,7 +63,6 @@ namespace TRIPP.LexImperialis.Editor
 
             foreach (ParticleSystem particleSystem in particleSystems)
             {
-                bool matched = false;
 
                 foreach (var preset in presets)
                 {
@@ -77,41 +77,23 @@ namespace TRIPP.LexImperialis.Editor
 
                     if (presetInfractions == null)
                     {
-                        matched = true;
                         break;
                     }
 
                     // Check maxParticles against the preset
                     ParticleSystem.MainModule mainModule = particleSystem.main;
-                    SerializedObject presetObject = new SerializedObject(preset);
-                    SerializedProperty maxParticlesProperty = presetObject.FindProperty("maxParticles");
+                    PropertyModification maxParticlesModification = Array.Find(preset.PropertyModifications,
+                        modification => modification.propertyPath.Contains("InitialModule.maxNumParticles"));
+                    int presetMaxParticles = int.Parse(maxParticlesModification.value);
 
-                    if (maxParticlesProperty != null && maxParticlesProperty.propertyType == SerializedPropertyType.Integer)
-                    {
-                        int presetMaxParticles = maxParticlesProperty.intValue;
-
-                        // Remove infractions related to maxParticles if within the limit
-                        presetInfractions.RemoveAll(infraction =>
-                            infraction.message.Contains("maxParticles") &&
-                            mainModule.maxParticles <= presetMaxParticles);
-                    }
+                    // Remove infractions related to maxParticles if within the limit
+                    presetInfractions.RemoveAll(infraction =>
+                        infraction.message.Contains("InitialModule.maxNumParticles") &&
+                        mainModule.maxParticles <= presetMaxParticles);
 
                     // Add remaining infractions to the main infractions list
                     infractions.AddRange(presetInfractions);
                 }
-
-                // If a match was found, skip adding a "does not adhere" infraction
-                if (matched)
-                {
-                    continue;
-                }
-
-                // Add a general infraction if no presets matched
-                infractions.Add(new Infraction
-                {
-                    isFixable = false,
-                    message = $"{particleSystem.name} does not adhere to any of the provided presets."
-                });
             }
 
             return infractions;
