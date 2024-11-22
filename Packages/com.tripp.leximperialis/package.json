@@ -1,6 +1,6 @@
 {
   "name": "com.tripp.leximperialis",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "displayName": "Lex Imperialis",
   "description": "In the grim darkness of the far future, there is only war. To stray from the path of the Emperor's light is to invite chaos and destruction upon oneself. Obey the rules, or face the wrath of the Imperium.\r\n\r\nThe Lex Imperialis is a comprehensive toolset designed to empower technical teams in implementing Unity Editor standards efficiently. It presents these standards in an accessible and organized format within a user-friendly interface. By streamlining adherence to guidelines, it enhances productivity and fosters a cohesive development environment, allowing content creators to focus on core tasks while ensuring compliance with industry standards.",
   "unity": "2022.3",
