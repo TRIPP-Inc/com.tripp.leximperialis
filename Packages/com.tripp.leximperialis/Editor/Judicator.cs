@@ -53,16 +53,14 @@ namespace TRIPP.LexImperialis.Editor
                         return result;
                     }
 
-                    result = new Judgment();
-                    result.accused = accused;
-                    result.infractions = new List<Infraction>();
+                    result = new Judgment
+                    {
+                        accused = accused,
+                        infractions = new List<Infraction>()
+                    };
                 }
 
-                if (result.infractions == null)
-                {
-                    result.infractions = new List<Infraction>();
-                }
-
+                result.infractions ??= new List<Infraction>();
                 result.infractions.AddRange(infractions);
             }
             else
