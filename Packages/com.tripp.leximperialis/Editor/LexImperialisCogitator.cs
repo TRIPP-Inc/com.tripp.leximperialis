@@ -60,7 +60,7 @@ namespace TRIPP.LexImperialis.Editor
             if (_message != null)
             {
                 EditorGUILayout.BeginHorizontal("Box");
-                if (_message.Contains("Success"))
+                if (_message.Contains("Successfully"))
                 {
                     GUI.color = Color.green;
                 }
@@ -168,14 +168,14 @@ namespace TRIPP.LexImperialis.Editor
                 GUILayout.FlexibleSpace();
                 if (Selection.count > 0)
                 {
-                    if (GUILayout.Button("Get Importer Type"))
+                    if (GUILayout.Button("Create Judicator Filter"))
                     {
-                        _message = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(Selection.activeObject)).GetType().Name;
-                    }
+                        if (machineSpirit == null)
+                        {
+                            machineSpirit = new LexImperialisMachineSpirit();
+                        }
 
-                    if (GUILayout.Button("Get Type"))
-                    {
-                        _message = Selection.activeObject.GetType().Name;
+                        _message = machineSpirit.CreateJudicatorFilter();
                     }
                 }
 

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46fd3712901f57b41a03583a0b1b0436, type: 3}
+  m_Name: SceneJudicator
+  m_EditorClassIdentifier: 
+  platformStandards:
+  - qualityLevelName: Quest2
+    memoryUsageLimitMB: 512
+    maxTriangleCount: 500000
+    maxDrawCalls: 500
+    fieldOfView: 110
+    aspectRatio: 1
+    cameraRotates: 1
+    cameraRotationInterval: 90

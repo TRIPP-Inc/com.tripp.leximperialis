@@ -152,6 +152,37 @@ namespace TRIPP.LexImperialis.Editor
 
             return message;
         }
+
+        public string CreateJudicatorFilter()
+        {
+            string result = $"Failed to create Judicator Filter for {Selection.activeObject.name}";
+            if (Selection.activeObject != null)
+            {
+                Object section = Selection.activeObject;
+                string objectType = section.GetType().Name;
+                string importerType = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(section)).GetType().Name;
+                bool filterExists = _lexImperialis.judicatorFilters.Any(f => f.objectType == objectType && f.importerType.ToString() == importerType);
+                if (!filterExists)
+                {
+                    JudicatorFilter filter = new JudicatorFilter
+                    {
+                        importerType = (ImporterType)Enum.Parse(typeof(ImporterType), importerType),
+                        objectType = objectType,
+                        judicator = null
+                    };
+
+                    _lexImperialis.judicatorFilters.Add(filter);
+                    result = $"Successfully created Judicator Filter for {Selection.activeObject.name}. " +
+                             $"Please assign the corresponding Judicator to the filter in the Lex Imperialis.";
+                }
+                else
+                {
+                    result = $"Judicator Filter for {Selection.activeObject.name} already exists.";
+                }
+            }
+
+            return result;
+        }
     }
 
     public class Judgment
