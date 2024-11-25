@@ -10,52 +10,123 @@ namespace TRIPP.LexImperialis.Editor
 {
     public class LexImperialisMachineSpirit
     {
+        // Path to the binary cache file
+        private string cacheFilePath = "Library/LexImperialisCache.bin";
+
+        // Cache data structure
+        private CacheData cache;
+
         private LexImperialis _lexImperialis;
 
         public LexImperialisMachineSpirit()
         {
-            _lexImperialis = AssetDatabase.LoadAssetAtPath<LexImperialis>(AssetDatabase.GUIDToAssetPath(AssetDatabase.FindAssets("t: LexImperialis")[0]));
+            // Load LexImperialis ScriptableObject
+            _lexImperialis = AssetDatabase.LoadAssetAtPath<LexImperialis>(
+                AssetDatabase.GUIDToAssetPath(AssetDatabase.FindAssets("t:LexImperialis")[0])
+            );
+
+            // Load existing cache or create a new one
+            if (File.Exists(cacheFilePath))
+            {
+                using (FileStream stream = new FileStream(cacheFilePath, FileMode.Open))
+                {
+                    var formatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                    cache = (CacheData)formatter.Deserialize(stream);
+                }
+            }
+            else
+            {
+                cache = new CacheData();
+            }
         }
 
         public List<Judgment> PassJudgement()
         {
             List<Judgment> judgements = new List<Judgment>();
             Object[] selection = Selection.objects;
-            List<string> dependencyPaths = new List<string>();
-
-
 
             foreach (Object obj in selection)
             {
-                dependencyPaths.AddRange(AssetDatabase.GetDependencies(AssetDatabase.GetAssetPath(obj)));
-            }
+                string assetPath = AssetDatabase.GetAssetPath(obj);
+                string currentHash = ComputeAssetHash(obj);
 
-            foreach (string path in dependencyPaths)
-            {
-                Object accused = AssetDatabase.LoadAssetAtPath<Object>(path);
-                if (accused == null)
-                    continue;
-
-               
-                
-                string accusedObjectType = accused.GetType().Name;
-                string accusedImporterType = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(accused)).GetType().Name;
-                JudicatorFilter filter = _lexImperialis.judicatorFilters.Find(f => accusedObjectType == f.objectType && accusedImporterType == f.importerType.ToString());
-                if (filter == null)
-                    continue;
-
-                Judicator judicator = filter.judicator as Judicator;
-                Judgment accusedJudgment = null;
-                if (judicator != null)
-                    accusedJudgment = judicator.Adjudicate(accused);
-
-                if (accusedJudgment != null && accusedJudgment.infractions != null)
+                // Skip adjudication for cached assets
+                if (ShouldSkipAsset(assetPath, currentHash))
                 {
-                    judgements.Add(accusedJudgment);
+                    Debug.Log($"{assetPath} skipped (unchanged and previously passed).");
+                    continue;
                 }
+
+                // Perform adjudication
+                List<Judgment> newJudgments = AdjudicateAsset(obj);
+                judgements.AddRange(newJudgments);
+
+                // Update cache
+                UpdateCache(assetPath, currentHash, newJudgments);
             }
 
             return judgements;
+        }
+
+        private bool ShouldSkipAsset(string assetPath, string currentHash)
+        {
+            CachedAsset cached = cache.assets.Find(c => c.assetPath == assetPath);
+            return cached != null && cached.hash == currentHash && cached.passed;
+        }
+
+        private void UpdateCache(string assetPath, string currentHash, List<Judgment> judgments)
+        {
+            CachedAsset cached = cache.assets.Find(c => c.assetPath == assetPath);
+            if (cached == null)
+            {
+                cached = new CachedAsset { assetPath = assetPath };
+                cache.assets.Add(cached);
+            }
+
+            cached.hash = currentHash;
+            cached.passed = judgments.All(j => j.infractions == null || j.infractions.Count == 0);
+
+            SaveCache(); // Persist changes to disk
+        }
+
+        private void SaveCache()
+        {
+            using (FileStream stream = new FileStream(cacheFilePath, FileMode.Create))
+            {
+                var formatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                formatter.Serialize(stream, cache);
+            }
+        }
+
+        private string ComputeAssetHash(Object asset)
+        {
+            string assetPath = AssetDatabase.GetAssetPath(asset);
+            DateTime lastModified = File.GetLastWriteTime(assetPath);
+            return $"{assetPath}_{lastModified.GetHashCode()}";
+        }
+
+        private List<Judgment> AdjudicateAsset(Object obj)
+        {
+            List<Judgment> judgments = new List<Judgment>();
+
+            // Find the appropriate Judicator filter for this object
+            string objectType = obj.GetType().Name;
+            AssetImporter importer = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(obj));
+            string importerType = importer != null ? importer.GetType().Name : null;
+
+            JudicatorFilter filter = _lexImperialis.judicatorFilters.Find(f =>
+                f.objectType == objectType && f.importerType.ToString() == importerType);
+
+            if (filter != null && filter.judicator is Judicator judicator)
+            {
+                Judgment judgment = judicator.Adjudicate(obj);
+                if (judgment != null)
+                {
+                    judgments.Add(judgment);
+                }
+            }
+
+            return judgments;
         }
 
         public void PrintAllVariantsToLaw(Material material)
@@ -196,5 +267,19 @@ namespace TRIPP.LexImperialis.Editor
     {
         public string message;
         public bool isFixable;
+    }
+
+    [Serializable]
+    public class CacheData
+    {
+        public List<CachedAsset> assets = new List<CachedAsset>(); // List of cached assets
+    }
+
+    [Serializable]
+    public class CachedAsset
+    {
+        public string assetPath; // Path to the asset
+        public string hash;      // Hash representing the asset's state
+        public bool passed;      // Whether the asset passed adjudication
     }
 }
