@@ -76,30 +76,43 @@ namespace TRIPP.LexImperialis.Editor
                     JudicatorFilter filter = _lexImperialis.judicatorFilters.Find(f =>
                         f.objectType == objectType && f.importerType.ToString() == importerType);
 
-                    // Skip adjudication if the filter is disabled
-                    if (filter != null && filterDictionary.ContainsKey(filter) && !filterDictionary[filter])
+                    if (filter == null)
+                    {
+                        Debug.LogWarning($"No filter found for {objectType}. Skipping {assetPath}.");
+                        continue;
+                    }
+
+                    if (!filterDictionary.ContainsKey(filter) || !filterDictionary[filter])
                     {
                         Debug.Log($"{assetPath} skipped (filter disabled).");
                         continue;
                     }
 
-                    // Skip adjudication for cached assets
-                    if (ShouldSkipAsset(assetPath, currentHash))
+                    // Perform adjudication
+                    try
                     {
-                        Debug.Log($"{assetPath} skipped (unchanged and previously passed).");
+                        List<Judgment> newJudgments = AdjudicateAsset(obj);
+                        judgements.AddRange(newJudgments);
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogError($"Error adjudicating {assetPath}: {ex.Message}\n{ex.StackTrace}");
                         continue;
                     }
 
-                    // Perform adjudication
-                    List<Judgment> newJudgments = AdjudicateAsset(obj);
-                    judgements.AddRange(newJudgments);
-
                     // Update cache
-                    UpdateCache(assetPath, currentHash, newJudgments);
+                    try
+                    {
+                        UpdateCache(assetPath, currentHash, judgements);
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogError($"Error updating cache for {assetPath}: {ex.Message}\n{ex.StackTrace}");
+                    }
                 }
                 catch (System.Exception ex)
                 {
-                    Debug.LogError($"Error processing {assetPath}: {ex.Message}");
+                    Debug.LogError($"Unexpected error processing {assetPath}: {ex.Message}\n{ex.StackTrace}");
                 }
             }
 
