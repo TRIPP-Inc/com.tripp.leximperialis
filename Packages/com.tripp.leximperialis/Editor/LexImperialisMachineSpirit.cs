@@ -16,7 +16,7 @@ namespace TRIPP.LexImperialis.Editor
         // Cache data structure
         private CacheData cache;
 
-        private LexImperialis _lexImperialis;
+        public LexImperialis _lexImperialis;
 
         public LexImperialisMachineSpirit()
         {
@@ -40,7 +40,7 @@ namespace TRIPP.LexImperialis.Editor
             }
         }
 
-        public List<Judgment> PassJudgement()
+        public List<Judgment> PassJudgement(Dictionary<JudicatorFilter, bool> filterDictionary)
         {
             List<Judgment> judgements = new List<Judgment>();
             Object[] selection = Selection.objects;
