@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using System.Linq;
 
 namespace TRIPP.LexImperialis.Editor
 {
@@ -10,6 +11,7 @@ namespace TRIPP.LexImperialis.Editor
         public static void ShowWindow()
         {
             GetWindow<LexImperialisCogitator>("Lex Imperialis");
+
         }
 
         private LexImperialisMachineSpirit machineSpirit;
@@ -20,10 +22,22 @@ namespace TRIPP.LexImperialis.Editor
         private string _message;
         private GUIStyle _messageStyle;
         private bool _randomMessageIsSet;
+        private Dictionary<JudicatorFilter, bool> filterDictionary = new Dictionary<JudicatorFilter, bool>();
 
         private void OnGUI()
         {
-            if(_messageStyle == null)
+
+
+            if (machineSpirit == null)
+            {
+                machineSpirit = new LexImperialisMachineSpirit();
+                foreach (JudicatorFilter jf in machineSpirit._lexImperialis.judicatorFilters)
+                    filterDictionary.Add(jf, true);
+            }
+
+
+
+            if (_messageStyle == null)
                 _messageStyle = new GUIStyle();
 
             if (EditorGUILayout.LinkButton("Standards"))
@@ -40,7 +54,7 @@ namespace TRIPP.LexImperialis.Editor
             EditorGUILayout.Space();
             _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
             switch (_toolbarIndex)
-            { 
+            {
                 case 0:
                     DisplayAbitesJudge();
                     break;
@@ -60,7 +74,7 @@ namespace TRIPP.LexImperialis.Editor
             if (_message != null)
             {
                 EditorGUILayout.BeginHorizontal("Box");
-                if (_message.Contains("Successfully"))
+                if (_message.Contains("Success"))
                 {
                     GUI.color = Color.green;
                 }
@@ -79,21 +93,30 @@ namespace TRIPP.LexImperialis.Editor
 
         private void DisplayAbitesJudge()
         {
+
+
             if (Selection.count != 0)
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.FlexibleSpace();
-                if (GUILayout.Button("Pass Judgment"))
-                {
-                    if (machineSpirit == null)
-                    {
-                        machineSpirit = new LexImperialisMachineSpirit();
-                    }
+                GUILayout.EndHorizontal();
 
-                    judgments = machineSpirit.PassJudgement();
+                if (machineSpirit != null)
+                {
+
+                    EditorGUILayout.BeginVertical("Box");
+
+                    foreach (JudicatorFilter dct in filterDictionary.Keys.ToList())
+                        filterDictionary[dct] = EditorGUILayout.ToggleLeft(dct.judicator.name, filterDictionary[dct]);
+
+
+                    EditorGUILayout.EndVertical();
                 }
 
-                GUILayout.EndHorizontal();
+                if (GUILayout.Button("Pass Judgment"))
+                {
+                    judgments = machineSpirit.PassJudgement(filterDictionary);
+                }
             }
 
             if (judgments != null)
@@ -108,6 +131,7 @@ namespace TRIPP.LexImperialis.Editor
                             EditorGUILayout.BeginHorizontal();
                             EditorGUILayout.ObjectField("", judgment.accused, typeof(Object), false);
                             EditorGUILayout.EndHorizontal();
+
                             for (int i = 0; i < judgment.infractions.Count; i++)
                             {
                                 Infraction infraction = judgment.infractions[i];
@@ -153,7 +177,7 @@ namespace TRIPP.LexImperialis.Editor
             {
                 "There is no such thing as innocence, only degrees of guilt.",
                 "Ave imperator.",
-                "Success is measured in blood; yours or your enemy´s.",
+                "Success is measured in blood; yours or your enemy's.",
                 "An open mind is like a fortress with its gates unbarred and unguarded."
             };
 
@@ -168,14 +192,14 @@ namespace TRIPP.LexImperialis.Editor
                 GUILayout.FlexibleSpace();
                 if (Selection.count > 0)
                 {
-                    if (GUILayout.Button("Create Judicator Filter"))
+                    if (GUILayout.Button("Get Importer Type"))
                     {
-                        if (machineSpirit == null)
-                        {
-                            machineSpirit = new LexImperialisMachineSpirit();
-                        }
+                        _message = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(Selection.activeObject)).GetType().Name;
+                    }
 
-                        _message = machineSpirit.CreateJudicatorFilter();
+                    if (GUILayout.Button("Get Type"))
+                    {
+                        _message = Selection.activeObject.GetType().Name;
                     }
                 }
 

@@ -16,7 +16,7 @@ namespace TRIPP.LexImperialis.Editor
         // Cache data structure
         private CacheData cache;
 
-        private LexImperialis _lexImperialis;
+        public LexImperialis _lexImperialis;
 
         public LexImperialisMachineSpirit()
         {
@@ -40,31 +40,39 @@ namespace TRIPP.LexImperialis.Editor
             }
         }
 
-        public List<Judgment> PassJudgement()
+        public List<Judgment> PassJudgement(Dictionary<JudicatorFilter, bool> filterDictionary)
         {
             List<Judgment> judgements = new List<Judgment>();
             Object[] selection = Selection.objects;
-
             foreach (Object obj in selection)
             {
                 string assetPath = AssetDatabase.GetAssetPath(obj);
                 string currentHash = ComputeAssetHash(obj);
 
+                // Find the filter for this object
+                string objectType = obj.GetType().Name;
+                AssetImporter importer = AssetImporter.GetAtPath(assetPath);
+                string importerType = importer != null ? importer.GetType().Name : null;
+
+                JudicatorFilter filter = _lexImperialis.judicatorFilters.Find(f =>f.objectType == objectType && f.importerType.ToString() == importerType);
+                // Skip adjudication if the filter is disabled
+                if (filter != null && filterDictionary.ContainsKey(filter) && !filterDictionary[filter])
+                {
+                    //Debug.Log($"{assetPath} skipped (filter disabled).");
+                    continue;
+                }
                 // Skip adjudication for cached assets
                 if (ShouldSkipAsset(assetPath, currentHash))
                 {
                     Debug.Log($"{assetPath} skipped (unchanged and previously passed).");
                     continue;
                 }
-
                 // Perform adjudication
                 List<Judgment> newJudgments = AdjudicateAsset(obj);
                 judgements.AddRange(newJudgments);
-
                 // Update cache
                 UpdateCache(assetPath, currentHash, newJudgments);
             }
-
             return judgements;
         }
 
