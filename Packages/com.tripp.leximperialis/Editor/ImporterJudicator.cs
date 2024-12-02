@@ -122,7 +122,7 @@ namespace TRIPP.LexImperialis.Editor
                     result.accusedValue = property.boolValue.ToString();
                     break;
                 case SerializedPropertyType.Float:
-                    float presetFloat = float.Parse(propertyModificationValue);
+                    float presetFloat = float.Parse(propertyModificationValue, new System.Globalization.CultureInfo("en-EN"));
                     result.presetValue = presetFloat.ToString($"F{floatComparisonPrecision}");
                     result.accusedValue = property.floatValue.ToString($"F{floatComparisonPrecision}");
                     break;
