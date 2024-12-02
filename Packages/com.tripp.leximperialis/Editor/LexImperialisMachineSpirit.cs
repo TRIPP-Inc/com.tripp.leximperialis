@@ -49,13 +49,22 @@ namespace TRIPP.LexImperialis.Editor
             {
                 Object obj = selection[i];
                 string assetPath = AssetDatabase.GetAssetPath(obj);
+
+                // Validate asset path
+                if (string.IsNullOrEmpty(assetPath))
+                {
+                    Debug.LogWarning($"Invalid asset path for object at index {i}. Skipping.");
+                    continue;
+                }
+
+                string assetName = Path.GetFileName(assetPath); // Extract the object name
                 string currentHash = ComputeAssetHash(obj);
 
                 // Update progress bar with cancel option
                 float progress = (float)i / selection.Length;
                 bool isCancelled = EditorUtility.DisplayCancelableProgressBar(
                     "Passing Judgment",
-                    $"Processing {assetPath} ({i + 1}/{selection.Length})",
+                    $"Processing {assetName} ({i + 1}/{selection.Length})",
                     progress
                 );
 
@@ -66,54 +75,32 @@ namespace TRIPP.LexImperialis.Editor
                     break;
                 }
 
-                try
+                // Find the filter for this object
+                string objectType = obj.GetType().Name;
+                AssetImporter importer = AssetImporter.GetAtPath(assetPath);
+                string importerType = importer != null ? importer.GetType().Name : null;
+
+                JudicatorFilter filter = _lexImperialis.judicatorFilters.Find(f =>
+                    f.objectType == objectType && f.importerType.ToString() == importerType);
+
+                if (filter == null)
                 {
-                    // Find the filter for this object
-                    string objectType = obj.GetType().Name;
-                    AssetImporter importer = AssetImporter.GetAtPath(assetPath);
-                    string importerType = importer != null ? importer.GetType().Name : null;
-
-                    JudicatorFilter filter = _lexImperialis.judicatorFilters.Find(f =>
-                        f.objectType == objectType && f.importerType.ToString() == importerType);
-
-                    if (filter == null)
-                    {
-                        Debug.LogWarning($"No filter found for {objectType}. Skipping {assetPath}.");
-                        continue;
-                    }
-
-                    if (!filterDictionary.ContainsKey(filter) || !filterDictionary[filter])
-                    {
-                        Debug.Log($"{assetPath} skipped (filter disabled).");
-                        continue;
-                    }
-
-                    // Perform adjudication
-                    try
-                    {
-                        List<Judgment> newJudgments = AdjudicateAsset(obj);
-                        judgements.AddRange(newJudgments);
-                    }
-                    catch (System.Exception ex)
-                    {
-                        Debug.LogError($"Error adjudicating {assetPath}: {ex.Message}\n{ex.StackTrace}");
-                        continue;
-                    }
-
-                    // Update cache
-                    try
-                    {
-                        UpdateCache(assetPath, currentHash, judgements);
-                    }
-                    catch (System.Exception ex)
-                    {
-                        Debug.LogError($"Error updating cache for {assetPath}: {ex.Message}\n{ex.StackTrace}");
-                    }
+                    Debug.LogWarning($"No filter found for {objectType}. Skipping {assetName}.");
+                    continue;
                 }
-                catch (System.Exception ex)
+
+                if (!filterDictionary.ContainsKey(filter) || !filterDictionary[filter])
                 {
-                    Debug.LogError($"Unexpected error processing {assetPath}: {ex.Message}\n{ex.StackTrace}");
+                    Debug.Log($"{assetName} skipped (filter disabled).");
+                    continue;
                 }
+
+                // Perform adjudication
+                List<Judgment> newJudgments = AdjudicateAsset(obj);
+                judgements.AddRange(newJudgments);
+
+                // Update cache
+                UpdateCache(assetPath, currentHash, judgements);
             }
 
             // Clear progress bar
