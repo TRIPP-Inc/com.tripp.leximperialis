@@ -107,8 +107,10 @@ namespace TRIPP.LexImperialis.Editor
                     EditorGUILayout.BeginVertical("Box");
 
                     foreach (JudicatorFilter dct in filterDictionary.Keys.ToList())
-                        filterDictionary[dct] = EditorGUILayout.ToggleLeft(dct.judicator.name, filterDictionary[dct]);
-
+                    {
+                        if(dct != null && dct.judicator != null)
+                            filterDictionary[dct] = EditorGUILayout.ToggleLeft(dct.judicator.name, filterDictionary[dct]);
+                    } 
 
                     EditorGUILayout.EndVertical();
                 }
