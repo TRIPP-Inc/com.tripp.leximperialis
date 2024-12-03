@@ -44,35 +44,68 @@ namespace TRIPP.LexImperialis.Editor
         {
             List<Judgment> judgements = new List<Judgment>();
             Object[] selection = Selection.objects;
-            foreach (Object obj in selection)
+
+            for (int i = 0; i < selection.Length; i++)
             {
+                Object obj = selection[i];
                 string assetPath = AssetDatabase.GetAssetPath(obj);
+
+                // Validate asset path
+                if (string.IsNullOrEmpty(assetPath))
+                {
+                    Debug.LogWarning($"Invalid asset path for object at index {i}. Skipping.");
+                    continue;
+                }
+
+                string assetName = Path.GetFileName(assetPath); // Extract the object name
                 string currentHash = ComputeAssetHash(obj);
+
+                // Update progress bar with cancel option
+                float progress = (float)i / selection.Length;
+                bool isCancelled = EditorUtility.DisplayCancelableProgressBar(
+                    "Passing Judgment",
+                    $"Processing {assetName} ({i + 1}/{selection.Length})",
+                    progress
+                );
+
+                // Handle cancellation
+                if (isCancelled)
+                {
+                    Debug.Log("Pass Judgment operation canceled by the user.");
+                    break;
+                }
 
                 // Find the filter for this object
                 string objectType = obj.GetType().Name;
                 AssetImporter importer = AssetImporter.GetAtPath(assetPath);
                 string importerType = importer != null ? importer.GetType().Name : null;
 
-                JudicatorFilter filter = _lexImperialis.judicatorFilters.Find(f =>f.objectType == objectType && f.importerType.ToString() == importerType);
-                // Skip adjudication if the filter is disabled
-                if (filter != null && filterDictionary.ContainsKey(filter) && !filterDictionary[filter])
+                JudicatorFilter filter = _lexImperialis.judicatorFilters.Find(f =>
+                    f.objectType == objectType && f.importerType.ToString() == importerType);
+
+                if (filter == null)
                 {
-                    //Debug.Log($"{assetPath} skipped (filter disabled).");
+                    Debug.LogWarning($"No filter found for {objectType}. Skipping {assetName}.");
                     continue;
                 }
-                // Skip adjudication for cached assets
-                if (ShouldSkipAsset(assetPath, currentHash))
+
+                if (!filterDictionary.ContainsKey(filter) || !filterDictionary[filter])
                 {
-                    Debug.Log($"{assetPath} skipped (unchanged and previously passed).");
+                    Debug.Log($"{assetName} skipped (filter disabled).");
                     continue;
                 }
+
                 // Perform adjudication
                 List<Judgment> newJudgments = AdjudicateAsset(obj);
                 judgements.AddRange(newJudgments);
+
                 // Update cache
-                UpdateCache(assetPath, currentHash, newJudgments);
+                UpdateCache(assetPath, currentHash, judgements);
             }
+
+            // Clear progress bar
+            EditorUtility.ClearProgressBar();
+
             return judgements;
         }
 
