@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -144,8 +143,7 @@ namespace TRIPP.LexImperialis.Editor
         {
             string assetPath = AssetDatabase.GetAssetPath(asset);
 
-            // Check if the file exists and is valid
-            if (string.IsNullOrEmpty(assetPath) || !File.Exists(assetPath))
+            if (string.IsNullOrEmpty(assetPath))
             {
                 Debug.LogWarning($"Cannot compute hash for asset: {asset.name} (Invalid path)");
                 return $"{assetPath}_INVALID";
@@ -153,15 +151,19 @@ namespace TRIPP.LexImperialis.Editor
 
             try
             {
-                // Read the file content. The hash computation needs the exact bytes that make up the file to ensure it detects any changes.
-                byte[] fileBytes = File.ReadAllBytes(assetPath);
+                AssetImporter importer = AssetImporter.GetAtPath(assetPath);
 
-                // SHA256 is a secure hashing algorithm that generates a unique fixed-length hash based on the file content
-                using (SHA256 sha256 = SHA256.Create())
+                if (importer == null)
                 {
-                    byte[] hashBytes = sha256.ComputeHash(fileBytes);                                   // Converts the file bytes to a hash byte array
-                    return $"{assetPath}_{System.BitConverter.ToString(hashBytes).Replace("-", "")}";   // Converts the hash byte array to a readable string
+                    Debug.LogWarning($"No importer found for asset: {asset.name}. Using fallback hash.");
+                    return $"{assetPath}_NO_IMPORTER";
                 }
+
+                SerializedObject serializedImporter = new SerializedObject(importer);
+                string serializedData = SerializeImporterProperties(serializedImporter);
+
+                // Return serialized data directly
+                return $"{assetPath}_{serializedData}";
             }
             catch (Exception e)
             {
@@ -169,6 +171,75 @@ namespace TRIPP.LexImperialis.Editor
                 return $"{assetPath}_ERROR";
             }
         }
+
+        private string SerializeImporterProperties(SerializedObject importer)
+        {
+            System.Text.StringBuilder serializedData = new System.Text.StringBuilder();
+
+            SerializedProperty property = importer.GetIterator();
+            while (property.NextVisible(true)) // Iterate through all visible properties, including child properties
+            {
+                serializedData.Append($"{property.propertyPath}:");
+
+                // Append the property value based on its type. Each property is handled explicitly to ensure correct serialization.
+                switch (property.propertyType)
+                {
+                    case SerializedPropertyType.String:
+                        serializedData.Append(property.stringValue);
+                        break;
+                    case SerializedPropertyType.Integer:
+                        serializedData.Append(property.intValue);
+                        break;
+                    case SerializedPropertyType.Boolean:
+                        serializedData.Append(property.boolValue);
+                        break;
+                    case SerializedPropertyType.Float:
+                        serializedData.Append(property.floatValue.ToString("F4")); // Format to 4 decimal places
+                        break;
+                    case SerializedPropertyType.Color:
+                        serializedData.Append(property.colorValue.ToString());
+                        break;
+                    case SerializedPropertyType.ObjectReference:
+                        serializedData.Append(property.objectReferenceValue != null ? property.objectReferenceValue.name : "None");
+                        break;
+                    case SerializedPropertyType.Enum:
+                        serializedData.Append(property.enumDisplayNames[property.enumValueIndex]);
+                        break;
+                    case SerializedPropertyType.Vector2:
+                        serializedData.Append(property.vector2Value.ToString());
+                        break;
+                    case SerializedPropertyType.Vector3:
+                        serializedData.Append(property.vector3Value.ToString());
+                        break;
+                    case SerializedPropertyType.Vector4:
+                        serializedData.Append(property.vector4Value.ToString());
+                        break;
+                    case SerializedPropertyType.Rect:
+                        serializedData.Append(property.rectValue.ToString());
+                        break;
+                    case SerializedPropertyType.ArraySize:
+                        serializedData.Append(property.intValue);
+                        break;
+                    case SerializedPropertyType.AnimationCurve:
+                        serializedData.Append(property.animationCurveValue != null ? property.animationCurveValue.ToString() : "None");
+                        break;
+                    case SerializedPropertyType.Bounds:
+                        serializedData.Append(property.boundsValue.ToString());
+                        break;
+                    case SerializedPropertyType.Quaternion:
+                        serializedData.Append(property.quaternionValue.ToString());
+                        break;
+                    default:
+                        serializedData.Append("UnsupportedType"); // For any property types not handled above, the function appends a placeholder
+                        break;
+                }
+
+                serializedData.Append(";"); // Separate properties
+            }
+
+            return serializedData.ToString();
+        }
+
         private List<Judgment> AdjudicateAsset(Object obj)
         {
             List<Judgment> judgments = new List<Judgment>();
