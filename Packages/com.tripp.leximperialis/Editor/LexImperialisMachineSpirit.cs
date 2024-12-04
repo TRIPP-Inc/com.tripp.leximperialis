@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -142,10 +143,32 @@ namespace TRIPP.LexImperialis.Editor
         private string ComputeAssetHash(Object asset)
         {
             string assetPath = AssetDatabase.GetAssetPath(asset);
-            DateTime lastModified = File.GetLastWriteTime(assetPath);
-            return $"{assetPath}_{lastModified.GetHashCode()}";
-        }
 
+            // Check if the file exists and is valid
+            if (string.IsNullOrEmpty(assetPath) || !File.Exists(assetPath))
+            {
+                Debug.LogWarning($"Cannot compute hash for asset: {asset.name} (Invalid path)");
+                return $"{assetPath}_INVALID";
+            }
+
+            try
+            {
+                // Read the file content. The hash computation needs the exact bytes that make up the file to ensure it detects any changes.
+                byte[] fileBytes = File.ReadAllBytes(assetPath);
+
+                // SHA256 is a secure hashing algorithm that generates a unique fixed-length hash based on the file content
+                using (SHA256 sha256 = SHA256.Create())
+                {
+                    byte[] hashBytes = sha256.ComputeHash(fileBytes);                                   // Converts the file bytes to a hash byte array
+                    return $"{assetPath}_{System.BitConverter.ToString(hashBytes).Replace("-", "")}";   // Converts the hash byte array to a readable string
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error computing hash for asset: {asset.name}. Exception: {e.Message}");
+                return $"{assetPath}_ERROR";
+            }
+        }
         private List<Judgment> AdjudicateAsset(Object obj)
         {
             List<Judgment> judgments = new List<Judgment>();
