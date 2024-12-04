@@ -89,8 +89,11 @@ namespace TRIPP.LexImperialis.Editor
                     progress
                 );
 
+                if(isCancelled)
+                    break;
+
                 //Adjudicate the asset
-                if(judgments == null)
+                if (judgments == null)
                     judgments = new List<Judgment>();
 
                 if (filter.judicator == null)
