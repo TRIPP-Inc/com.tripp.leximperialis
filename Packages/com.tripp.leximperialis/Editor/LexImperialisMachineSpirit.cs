@@ -52,7 +52,7 @@ namespace TRIPP.LexImperialis.Editor
                 if(assetPath == null)
                     continue;
 
-                dependencyPaths.AddRange(AssetDatabase.GetDependencies(assetPath));
+                dependencyPaths.AddRange(AssetDatabase.GetDependencies(assetPath).Where(d => !dependencyPaths.Contains(d)));
             }
 
             int totalDependencies = dependencyPaths.Count;
@@ -77,10 +77,7 @@ namespace TRIPP.LexImperialis.Editor
                 //Check if the asset has changed since the last adjudication
                 AssetImporter importer = AssetImporter.GetAtPath(dependencyPath);
                 if (ShouldSkipAsset(dependencyPath, importer.assetTimeStamp))
-                {
-                    Debug.Log($"Skipping {dependencyPath}");
                     continue;
-                }
 
                 //Check if the filter for the asset is active
                 Object asset = AssetDatabase.LoadAssetAtPath<Object>(dependencyPath);
