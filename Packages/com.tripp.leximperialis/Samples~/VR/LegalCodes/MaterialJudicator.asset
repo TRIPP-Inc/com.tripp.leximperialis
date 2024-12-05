@@ -248,10 +248,10 @@ MonoBehaviour:
   emptyTextureMapping:
   - keyword: _NORMALMAP
     propertyName: _BumpMap
-    texture: {fileID: 2800000, guid: b89b7a82373c0474d804dd3648dc6573, type: 3}
+    texture: {fileID: 2800000, guid: 2d13d31b999e79e4c966c4ed1e12a334, type: 3}
   - keyword: _METALLICSPECGLOSSMAP
     propertyName: _MetallicGlossMap
-    texture: {fileID: 2800000, guid: 9ecba205287903343afbd5d6cea3f62c, type: 3}
+    texture: {fileID: 2800000, guid: a6b0cf5175c7d034c96ba3475f7da11f, type: 3}
   - keyword: _OCCLUSIONMAP
     propertyName: _OcclusionMap
-    texture: {fileID: 2800000, guid: 818f5a592e4dbc349ad0cb07969ec138, type: 3}
+    texture: {fileID: 2800000, guid: e34537f363a3ac944ab68614f9422e5a, type: 3}

@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fae54c9284a0e8d4ab76e1d45bdd8db1, type: 3}
   m_Name: ModelJudicator
   m_EditorClassIdentifier: 
-  phantomProperties:
-  - materialName
+  floatComparisonPrecision: 4
+  propertyPathsToIgnore: []
   presets:
-  - {fileID: 2655988077585873504, guid: 0a204f7608cc6d148bd7148e89ac8672, type: 2}
+  - {fileID: 2655988077585873504, guid: ab302b21ddd82754c882c481c623b781, type: 2}
+  maxTriangleCountLOD4: 1000

@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c135377381ec7704d8718038c259440d, type: 3}
   m_Name: LightmapsJudicator
   m_EditorClassIdentifier: 
-  phantomProperties: []
+  floatComparisonPrecision: 4
+  propertyPathsToIgnore: []
   presets:
-  - {fileID: 2655988077585873504, guid: 6ebf4daf54d66b545b00b8370e3fc82b, type: 2}
+  - {fileID: 2655988077585873504, guid: d007d3646ed895b47ba2d4e2f1265287, type: 2}

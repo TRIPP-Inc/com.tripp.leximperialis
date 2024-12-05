@@ -15,25 +15,25 @@ MonoBehaviour:
   judicatorFilters:
   - objectType: GameObject
     importerType: 4
-    judicator: {fileID: 11400000, guid: 708df5ea66606c24da6280560785e8de, type: 2}
+    judicator: {fileID: 11400000, guid: 5ea561eaaeffd8f4c8f2f74d08d31f7c, type: 2}
   - objectType: Texture2D
     importerType: 9
-    judicator: {fileID: 11400000, guid: 0aac535d2f297d84ea680e38df4f06ba, type: 2}
+    judicator: {fileID: 11400000, guid: 594ba856987b8b24bbfbe5dcb79f07b0, type: 2}
   - objectType: LightingSettings
     importerType: 0
-    judicator: {fileID: 11400000, guid: 9614266c5366dd344a45b0f001265944, type: 2}
+    judicator: {fileID: 11400000, guid: a6a164d17d33fc9458192fd2cebe2d77, type: 2}
   - objectType: AudioClip
     importerType: 1
-    judicator: {fileID: 11400000, guid: 7b4a295d60fd0d04d8856dfe7e3de97e, type: 2}
+    judicator: {fileID: 11400000, guid: 544308552e720194ba020d579f7e0fd0, type: 2}
   - objectType: Material
     importerType: 0
-    judicator: {fileID: 11400000, guid: 94adbc2c205e11d4fbac528b8d351ed2, type: 2}
+    judicator: {fileID: 11400000, guid: 6b68d69b9982b1b4d9335e854d39d01e, type: 2}
   - objectType: Cubemap
     importerType: 9
-    judicator: {fileID: 11400000, guid: bbc1c6b49b3316e47bc203a3f9fdf1c2, type: 2}
+    judicator: {fileID: 11400000, guid: a2d88dc34cff9e845b8b41597ea278b3, type: 2}
   - objectType: GameObject
     importerType: 6
-    judicator: {fileID: 11400000, guid: 13f6d3def2c91d748baff832beb90877, type: 2}
+    judicator: {fileID: 11400000, guid: 15fb37bca892f214aaf507e2948ddcc8, type: 2}
   - objectType: SceneAsset
     importerType: 0
-    judicator: {fileID: 11400000, guid: dadac79d1cf02a348a88c52d9448aa85, type: 2}
+    judicator: {fileID: 11400000, guid: f27ab0239a4170048a345fac11b83269, type: 2}
