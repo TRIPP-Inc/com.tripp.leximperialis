@@ -55,9 +55,22 @@ namespace TRIPP.LexImperialis.Editor
                 dependencyPaths.AddRange(AssetDatabase.GetDependencies(assetPath));
             }
 
-            for (int i = 0; i < dependencyPaths.Count; i++)
+            int totalDependencies = dependencyPaths.Count;
+            for (int i = 0; i < totalDependencies; i++)
             {
                 string dependencyPath = dependencyPaths[i];
+
+                //Update Progress Bar
+                float progress = (float)i / totalDependencies;
+                bool isCancelled = EditorUtility.DisplayCancelableProgressBar(
+                    "Passing Judgment",
+                    $"Processing {Path.GetFileName(dependencyPath)} ({i + 1}/{totalDependencies})",
+                    progress
+                );
+
+                if (isCancelled)
+                    break;
+
                 if (dependencyPath == null)
                     continue;
 
@@ -78,29 +91,18 @@ namespace TRIPP.LexImperialis.Editor
                 if (filter == null)
                     continue;
 
+                if (filter.judicator == null)
+                {
+                    Debug.LogError($"Judicator for {asset.name} is null.");
+                    continue;
+                }
+
                 if (!filterDictionary.ContainsKey(filter) || !filterDictionary[filter])
                     continue;
-
-                //Update Progress Bar
-                float progress = (float)i / selections.Length;
-                bool isCancelled = EditorUtility.DisplayCancelableProgressBar(
-                    "Passing Judgment",
-                    $"Processing {asset.name} ({i + 1}/{selections.Length})",
-                    progress
-                );
-
-                if(isCancelled)
-                    break;
 
                 //Adjudicate the asset
                 if (judgments == null)
                     judgments = new List<Judgment>();
-
-                if (filter.judicator == null)
-                { 
-                    Debug.LogError($"Judicator for {asset.name} is null.");
-                    continue;
-                }
 
                 Judgment judgment = filter.judicator.Adjudicate(asset);
                 if (judgment != null)
