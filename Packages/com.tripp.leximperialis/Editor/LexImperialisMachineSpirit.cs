@@ -60,7 +60,7 @@ namespace TRIPP.LexImperialis.Editor
             {
                 string dependencyPath = dependencyPaths[i];
 
-                //Update Progress Bar
+                // Update Progress Bar
                 float progress = (float)i / totalDependencies;
                 bool isCancelled = EditorUtility.DisplayCancelableProgressBar(
                     "Passing Judgment",
@@ -74,13 +74,22 @@ namespace TRIPP.LexImperialis.Editor
                 if (dependencyPath == null)
                     continue;
 
-                //Check if the asset has changed since the last adjudication
+                // Load the asset
+                Object asset = AssetDatabase.LoadAssetAtPath<Object>(dependencyPath);
+
+                // Check if it's a Material and save it to ensure changes are detected
+                if (asset is Material material)
+                {
+                    EditorUtility.SetDirty(material);  // Mark the material as changed
+                    AssetDatabase.SaveAssets();       // Save it to update the timestamp
+                }
+
+                // Check if the asset has changed since the last adjudication
                 AssetImporter importer = AssetImporter.GetAtPath(dependencyPath);
                 if (ShouldSkipAsset(dependencyPath, importer.assetTimeStamp))
                     continue;
 
-                //Check if the filter for the asset is active
-                Object asset = AssetDatabase.LoadAssetAtPath<Object>(dependencyPath);
+                // Check if the filter for the asset is active
                 string objectType = asset.GetType().Name;
                 JudicatorFilter filter = _lexImperialis.judicatorFilters.Find(f =>
                     f.objectType == objectType && f.importerType.ToString() == importer.GetType().Name);
@@ -94,10 +103,11 @@ namespace TRIPP.LexImperialis.Editor
                     continue;
                 }
 
+                // Check if the filter is active in the filter dictionary
                 if (!filterDictionary.ContainsKey(filter) || !filterDictionary[filter])
                     continue;
 
-                //Adjudicate the asset
+                // Adjudicate the asset
                 if (judgments == null)
                     judgments = new List<Judgment>();
 
