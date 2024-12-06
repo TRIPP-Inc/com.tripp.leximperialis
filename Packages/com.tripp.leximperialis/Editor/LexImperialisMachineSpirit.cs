@@ -1,3 +1,4 @@
+using Codice.CM.Common;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -42,80 +43,95 @@ namespace TRIPP.LexImperialis.Editor
 
         public List<Judgment> PassJudgement(Dictionary<JudicatorFilter, bool> filterDictionary)
         {
-            List<Judgment> judgements = new List<Judgment>();
-            Object[] selection = Selection.objects;
-
-            for (int i = 0; i < selection.Length; i++)
+            Object[] selections = Selection.objects;
+            List<string> dependencyPaths = new List<string>();
+            List<Judgment> judgments = null;
+            foreach (Object selection in selections)
             {
-                Object obj = selection[i];
-                string assetPath = AssetDatabase.GetAssetPath(obj);
-
-                // Validate asset path
-                if (string.IsNullOrEmpty(assetPath))
-                {
-                    Debug.LogWarning($"Invalid asset path for object at index {i}. Skipping.");
+                string assetPath = AssetDatabase.GetAssetPath(selection);
+                if (assetPath == null)
                     continue;
-                }
 
-                string assetName = Path.GetFileName(assetPath); // Extract the object name
-                string currentHash = ComputeAssetHash(obj);
+                dependencyPaths.AddRange(AssetDatabase.GetDependencies(assetPath).Where(d => !dependencyPaths.Contains(d)));
+            }
 
-                // Update progress bar with cancel option
-                float progress = (float)i / selection.Length;
+            int totalDependencies = dependencyPaths.Count;
+            for (int i = 0; i < totalDependencies; i++)
+            {
+                string dependencyPath = dependencyPaths[i];
+
+                // Update Progress Bar
+                float progress = (float)i / totalDependencies;
                 bool isCancelled = EditorUtility.DisplayCancelableProgressBar(
                     "Passing Judgment",
-                    $"Processing {assetName} ({i + 1}/{selection.Length})",
+                    $"Processing {Path.GetFileName(dependencyPath)} ({i + 1}/{totalDependencies})",
                     progress
                 );
 
-                // Handle cancellation
                 if (isCancelled)
-                {
-                    Debug.Log("Pass Judgment operation canceled by the user.");
                     break;
+
+                if (dependencyPath == null)
+                    continue;
+
+                // Load the asset
+                Object asset = AssetDatabase.LoadAssetAtPath<Object>(dependencyPath);
+
+                // Check if it's a Material and save it to ensure changes are detected
+                if (asset is Material material)
+                {
+                    EditorUtility.SetDirty(material);  // Mark the material as changed
+                    AssetDatabase.SaveAssets();       // Save it to update the timestamp
                 }
 
-                // Find the filter for this object
-                string objectType = obj.GetType().Name;
-                AssetImporter importer = AssetImporter.GetAtPath(assetPath);
-                string importerType = importer != null ? importer.GetType().Name : null;
+                // Check if the asset has changed since the last adjudication
+                AssetImporter importer = AssetImporter.GetAtPath(dependencyPath);
+                if (ShouldSkipAsset(dependencyPath, importer.assetTimeStamp))
+                    continue;
 
+                // Check if the filter for the asset is active
+                string objectType = asset.GetType().Name;
                 JudicatorFilter filter = _lexImperialis.judicatorFilters.Find(f =>
-                    f.objectType == objectType && f.importerType.ToString() == importerType);
+                    f.objectType == objectType && f.importerType.ToString() == importer.GetType().Name);
 
                 if (filter == null)
+                    continue;
+
+                if (filter.judicator == null)
                 {
-                    Debug.LogWarning($"No filter found for {objectType}. Skipping {assetName}.");
+                    Debug.LogError($"Judicator for {asset.name} is null.");
                     continue;
                 }
 
+                // Check if the filter is active in the filter dictionary
                 if (!filterDictionary.ContainsKey(filter) || !filterDictionary[filter])
-                {
-                    Debug.Log($"{assetName} skipped (filter disabled).");
                     continue;
-                }
 
-                // Perform adjudication
-                List<Judgment> newJudgments = AdjudicateAsset(obj);
-                judgements.AddRange(newJudgments);
+                // Adjudicate the asset
+                if (judgments == null)
+                    judgments = new List<Judgment>();
+
+                Judgment judgment = filter.judicator.Adjudicate(asset);
+                if (judgment != null)
+                    judgments.Add(judgment);
 
                 // Update cache
-                UpdateCache(assetPath, currentHash, judgements);
+                UpdateCache(importer.assetPath, importer.assetTimeStamp, judgment == null);
             }
 
             // Clear progress bar
             EditorUtility.ClearProgressBar();
 
-            return judgements;
+            return judgments;
         }
 
-        private bool ShouldSkipAsset(string assetPath, string currentHash)
+        private bool ShouldSkipAsset(string assetPath, ulong timeStamp)
         {
             CachedAsset cached = cache.assets.Find(c => c.assetPath == assetPath);
-            return cached != null && cached.hash == currentHash && cached.passed;
+            return cached != null && cached.timeStamp == timeStamp && cached.passed;
         }
 
-        private void UpdateCache(string assetPath, string currentHash, List<Judgment> judgments)
+        private void UpdateCache(string assetPath, ulong currentTimeStamp, bool passedJudgment)
         {
             CachedAsset cached = cache.assets.Find(c => c.assetPath == assetPath);
             if (cached == null)
@@ -124,10 +140,9 @@ namespace TRIPP.LexImperialis.Editor
                 cache.assets.Add(cached);
             }
 
-            cached.hash = currentHash;
-            cached.passed = judgments.All(j => j.infractions == null || j.infractions.Count == 0);
-
-            SaveCache(); // Persist changes to disk
+            cached.timeStamp = currentTimeStamp;
+            cached.passed = passedJudgment;
+            SaveCache();
         }
 
         private void SaveCache()
@@ -139,42 +154,11 @@ namespace TRIPP.LexImperialis.Editor
             }
         }
 
-        private string ComputeAssetHash(Object asset)
-        {
-            string assetPath = AssetDatabase.GetAssetPath(asset);
-            DateTime lastModified = File.GetLastWriteTime(assetPath);
-            return $"{assetPath}_{lastModified.GetHashCode()}";
-        }
-
-        private List<Judgment> AdjudicateAsset(Object obj)
-        {
-            List<Judgment> judgments = new List<Judgment>();
-
-            // Find the appropriate Judicator filter for this object
-            string objectType = obj.GetType().Name;
-            AssetImporter importer = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(obj));
-            string importerType = importer != null ? importer.GetType().Name : null;
-
-            JudicatorFilter filter = _lexImperialis.judicatorFilters.Find(f =>
-                f.objectType == objectType && f.importerType.ToString() == importerType);
-
-            if (filter != null && filter.judicator is Judicator judicator)
-            {
-                Judgment judgment = judicator.Adjudicate(obj);
-                if (judgment != null)
-                {
-                    judgments.Add(judgment);
-                }
-            }
-
-            return judgments;
-        }
-
         public void PrintAllVariantsToLaw(Material material)
         {
             List<List<string>> permutations = GetPermutations(material.shaderKeywords.ToList());
 
-            foreach(List<string> permutation in permutations)
+            foreach (List<string> permutation in permutations)
             {
                 Debug.Log(String.Join(" ", permutation));
                 PrintKeywordsToLaw(material.shader.name, permutation);
@@ -313,14 +297,14 @@ namespace TRIPP.LexImperialis.Editor
     [Serializable]
     public class CacheData
     {
-        public List<CachedAsset> assets = new List<CachedAsset>(); // List of cached assets
+        public List<CachedAsset> assets = new List<CachedAsset>();
     }
 
     [Serializable]
     public class CachedAsset
     {
-        public string assetPath; // Path to the asset
-        public string hash;      // Hash representing the asset's state
-        public bool passed;      // Whether the asset passed adjudication
+        public string assetPath;
+        public ulong timeStamp;
+        public bool passed;
     }
 }

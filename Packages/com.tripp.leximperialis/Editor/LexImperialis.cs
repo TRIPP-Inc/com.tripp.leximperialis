@@ -14,7 +14,7 @@ namespace TRIPP.LexImperialis.Editor
     {
         public string objectType;
         public ImporterType importerType;
-        public UnityEngine.Object judicator;
+        public Judicator judicator;
     }
 
     public enum ImporterType
