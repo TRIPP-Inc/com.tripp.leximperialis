@@ -186,6 +186,28 @@ namespace TRIPP.LexImperialis.Editor
             return result;
         }
 
+        public override string ServitudeImperpituis(Judgment judgment, Infraction infraction, Preset chosenPreset)
+        {
+            string result = "Failed to apply preset.";
+            if (judgment == null || infraction == null || chosenPreset == null)
+                return result;
+
+            AssetImporter importer = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(judgment.accused));
+            if (importer == null)
+                return result;
+
+            if (chosenPreset.CanBeAppliedTo(importer))
+            {
+                chosenPreset.ApplyTo(importer);
+                result = $"Successfully mind-wiped, reprogrammed, and cybernetically-enhanced {judgment.accused.name}.";
+                RemoveInfraction(judgment, infraction);
+
+                importer.SaveAndReimport();
+            }
+            return result;
+        }
+
+
         public override string ServitudeImperpituis(Judgment judgment, Infraction infraction)
         {
             string result = "Failed to apply preset.";

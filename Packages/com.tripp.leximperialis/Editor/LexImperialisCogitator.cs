@@ -233,11 +233,33 @@ namespace TRIPP.LexImperialis.Editor
                                         EditorGUILayout.LabelField(infraction.message);
                                         if (infraction.isFixable)
                                         {
-                                            if (GUILayout.Button("Fix"))
+                                            ImporterJudicator importerJudicator = judgment.judicator as ImporterJudicator;
+                                            if (importerJudicator != null &&
+                                                importerJudicator.presets != null &&
+                                                importerJudicator.presets.Count > 1)
                                             {
-                                                _message = judgment.judicator.ServitudeImperpituis(judgment, infraction);
-                                                _randomMessageIsSet = false;
+                                                // Display multiple fix buttons
+                                                foreach (var preset in importerJudicator.presets)
+                                                {
+                                                    if (preset == null) continue;
+
+                                                    if (GUILayout.Button($"Fix with {preset.name}"))
+                                                    {
+                                                        _message = importerJudicator.ServitudeImperpituis(judgment, infraction, preset);
+                                                        _randomMessageIsSet = false;
+                                                    }
+                                                }
                                             }
+                                            else
+                                            {
+                                                // fallback single fix
+                                                if (GUILayout.Button("Fix"))
+                                                {
+                                                    _message = judgment.judicator.ServitudeImperpituis(judgment, infraction);
+                                                    _randomMessageIsSet = false;
+                                                }
+                                            }
+
                                         }
                                         EditorGUILayout.EndHorizontal();
                                     }
