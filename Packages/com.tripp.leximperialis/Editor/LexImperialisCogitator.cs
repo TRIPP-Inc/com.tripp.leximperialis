@@ -117,6 +117,8 @@ namespace TRIPP.LexImperialis.Editor
 
         private void DisplayAbitesJudge()
         {
+
+
             if (Selection.count != 0)
             {
                 GUILayout.BeginHorizontal();
@@ -125,56 +127,15 @@ namespace TRIPP.LexImperialis.Editor
 
                 if (machineSpirit != null)
                 {
-                    int columnCount = 0;
+
                     EditorGUILayout.BeginVertical("Box");
-                    GUILayout.BeginHorizontal();
 
-                    foreach (JudicatorFilter filter in filterDictionary.Keys.ToList())
+                    foreach (JudicatorFilter dct in filterDictionary.Keys.ToList())
                     {
-                        if (filter != null && filter.judicator != null)
-                        {
-                            // Start a new column every 3 Judicators
-                            if (columnCount >= 3)
-                            {
-                                GUILayout.EndHorizontal();
-                                GUILayout.BeginHorizontal();
-                                columnCount = 0;
-                            }
-
-                            GUILayout.BeginVertical("Box", GUILayout.Width(300));
-                            GUILayout.BeginHorizontal();
-
-                            filterDictionary[filter] = EditorGUILayout.Toggle(filterDictionary[filter], GUILayout.Width(20)); // Checkbox first
-
-                            // Check if Judicator has 2 or more presets
-                            if (presetStates.ContainsKey(filter) && presetStates[filter].Count > 1)
-                            {
-                                judicatorExpanded[filter] = EditorGUILayout.Foldout(judicatorExpanded[filter], filter.judicator.name, true); // Dropdown arrow and name
-                            }
-                            else
-                            {
-                                // If fewer than 2 presets, just display the name
-                                EditorGUILayout.LabelField(filter.judicator.name);
-                            }
-
-                            GUILayout.EndHorizontal();
-
-                            if (judicatorExpanded[filter] && presetStates.ContainsKey(filter))
-                            {
-                                EditorGUILayout.BeginVertical("box"); // Show presets if expanded
-                                foreach (var preset in presetStates[filter].Keys.ToList())
-                                {
-                                    presetStates[filter][preset] = EditorGUILayout.ToggleLeft(preset.name, presetStates[filter][preset]);
-                                }
-                                EditorGUILayout.EndVertical();
-                            }
-
-                            GUILayout.EndVertical();
-                            columnCount++;
-                        }
+                        if (dct != null && dct.judicator != null)
+                            filterDictionary[dct] = EditorGUILayout.ToggleLeft(dct.judicator.name, filterDictionary[dct]);
                     }
 
-                    GUILayout.EndHorizontal();
                     EditorGUILayout.EndVertical();
                 }
 
@@ -233,6 +194,7 @@ namespace TRIPP.LexImperialis.Editor
                                         EditorGUILayout.LabelField(infraction.message);
                                         if (infraction.isFixable)
                                         {
+
                                             ImporterJudicator importerJudicator = judgment.judicator as ImporterJudicator;
                                             if (importerJudicator != null &&
                                                 importerJudicator.presets != null &&
