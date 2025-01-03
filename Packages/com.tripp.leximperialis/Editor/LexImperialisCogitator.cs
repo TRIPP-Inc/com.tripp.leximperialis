@@ -63,7 +63,8 @@ namespace TRIPP.LexImperialis.Editor
 
             // Move Select/Deselect All button below the toolbar
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Select/Deselect All", GUILayout.Width(120)))
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button("Select/Deselect All Judicators"))
             {
                 bool enableAll = !filterDictionary.Values.Any(enabled => enabled);
                 foreach (var key in filterDictionary.Keys.ToList())
@@ -71,10 +72,9 @@ namespace TRIPP.LexImperialis.Editor
                     filterDictionary[key] = enableAll;
                 }
             }
+            GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
-
             EditorGUILayout.Space();
-
             _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
             switch (_toolbarIndex)
             {
@@ -113,12 +113,8 @@ namespace TRIPP.LexImperialis.Editor
             }
         }
 
-
-
         private void DisplayAbitesJudge()
         {
-
-
             if (Selection.count != 0)
             {
                 GUILayout.BeginHorizontal();
@@ -141,7 +137,7 @@ namespace TRIPP.LexImperialis.Editor
 
                 if (GUILayout.Button("Pass Judgment"))
                 {
-                    judgments = machineSpirit.PassJudgement(filterDictionary); // Using the original method
+                    judgments = machineSpirit.PassJudgement(filterDictionary); 
                 }
             }
 
@@ -158,10 +154,8 @@ namespace TRIPP.LexImperialis.Editor
                             {
                                 infractionFoldouts[judgment.accused] = false;
                             }
-
                             EditorGUILayout.BeginVertical("Box");
 
-                            // Begin Horizontal Layout
                             EditorGUILayout.BeginHorizontal();
 
                             // Foldout arrow
@@ -171,63 +165,11 @@ namespace TRIPP.LexImperialis.Editor
                                 true,
                                 EditorStyles.foldout
                             );
-
-                            // Adjust spacing to bring the icon and name closer to the arrow
-                            GUILayout.Space(-730); // Negative space to bring the elements closer
-
-                            // ObjectField for Icon and Name
                             EditorGUILayout.ObjectField(judgment.accused, typeof(Object), false, GUILayout.ExpandWidth(true));
+                            GUILayout.FlexibleSpace();
+                            GUILayout.EndHorizontal();
 
-                            // End Horizontal Layout
-                            EditorGUILayout.EndHorizontal();
-
-                            // If expanded, show infractions
-                            if (infractionFoldouts[judgment.accused])
-                            {
-                                EditorGUILayout.BeginVertical("Box");
-                                for (int i = 0; i < judgment.infractions.Count; i++)
-                                {
-                                    Infraction infraction = judgment.infractions[i];
-                                    if (infraction != null)
-                                    {
-                                        EditorGUILayout.BeginHorizontal("Box");
-                                        EditorGUILayout.LabelField(infraction.message);
-                                        if (infraction.isFixable)
-                                        {
-
-                                            ImporterJudicator importerJudicator = judgment.judicator as ImporterJudicator;
-                                            if (importerJudicator != null &&
-                                                importerJudicator.presets != null &&
-                                                importerJudicator.presets.Count > 1)
-                                            {
-                                                // Display multiple fix buttons
-                                                foreach (var preset in importerJudicator.presets)
-                                                {
-                                                    if (preset == null) continue;
-
-                                                    if (GUILayout.Button($"Fix with {preset.name}"))
-                                                    {
-                                                        _message = importerJudicator.ServitudeImperpituis(judgment, infraction, preset);
-                                                        _randomMessageIsSet = false;
-                                                    }
-                                                }
-                                            }
-                                            else
-                                            {
-                                                // fallback single fix
-                                                if (GUILayout.Button("Fix"))
-                                                {
-                                                    _message = judgment.judicator.ServitudeImperpituis(judgment, infraction);
-                                                    _randomMessageIsSet = false;
-                                                }
-                                            }
-
-                                        }
-                                        EditorGUILayout.EndHorizontal();
-                                    }
-                                }
-                                EditorGUILayout.EndVertical();
-                            }
+                            DrawInfractions(judgment, infractionFoldouts);
 
                             EditorGUILayout.EndVertical();
                         }
@@ -246,8 +188,64 @@ namespace TRIPP.LexImperialis.Editor
                     _randomMessageIsSet = true;
                 }
             }
+        }
 
+        private void DrawInfractions(Judgment judgment, Dictionary<Object, bool> infractionFoldouts)
+        {
+            // Check if the foldout is expanded for this judgment
+            if (infractionFoldouts[judgment.accused])
+            {
+                EditorGUILayout.BeginVertical("Box");
 
+                // Iterate through the list of infractions
+                for (int i = 0; i < judgment.infractions.Count; i++)
+                {
+                    Infraction infraction = judgment.infractions[i];
+                    if (infraction != null)
+                    {
+                        EditorGUILayout.BeginHorizontal("Box");
+
+                        // Display the infraction message
+                        EditorGUILayout.LabelField(infraction.message);
+
+                        // Check if the infraction is fixable
+                        if (infraction.isFixable)
+                        {
+                            ImporterJudicator importerJudicator = judgment.judicator as ImporterJudicator;
+                            if (importerJudicator != null &&
+                                importerJudicator.presets != null &&
+                                importerJudicator.presets.Count > 1)
+                            {
+                                // Display multiple fix buttons for each preset
+                                foreach (var preset in importerJudicator.presets)
+                                {
+                                    if (preset == null)
+                                        continue;
+
+                                    if (GUILayout.Button($"Fix with {preset.name}"))
+                                    {
+                                        _message = importerJudicator.ServitudeImperpituis(judgment, infraction, preset);
+                                        _randomMessageIsSet = false;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                // Fallback: Single fix button
+                                if (GUILayout.Button("Fix"))
+                                {
+                                    _message = judgment.judicator.ServitudeImperpituis(judgment, infraction);
+                                    _randomMessageIsSet = false;
+                                }
+                            }
+                        }
+
+                        EditorGUILayout.EndHorizontal();
+                    }
+                }
+
+                EditorGUILayout.EndVertical();
+            }
         }
 
         private string SetRandomMessage()

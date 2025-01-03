@@ -127,13 +127,13 @@ namespace TRIPP.LexImperialis.Editor
             Transform targetTransform = prefab.transform.Find(particleSystemPath);
             if (targetTransform == null)
             {
-                return $"Could not find the ParticleSystem at path: {particleSystemPath}.";
+                return $"Failed to find the ParticleSystem at path: {particleSystemPath}.";
             }
 
             ParticleSystem targetParticleSystem = targetTransform.GetComponent<ParticleSystem>();
             if (targetParticleSystem == null)
             {
-                return $"Could not find a ParticleSystem at path: {particleSystemPath}.";
+                return $"Failed to find a ParticleSystem at path: {particleSystemPath}.";
             }
 
             // Access the serialized object of the ParticleSystem
