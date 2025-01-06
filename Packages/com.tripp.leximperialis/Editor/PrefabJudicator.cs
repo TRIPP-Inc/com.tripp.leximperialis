@@ -11,88 +11,66 @@ namespace TRIPP.LexImperialis.Editor
     {
         public override Judgment Adjudicate(UnityEngine.Object accused)
         {
-            // Ensure the accused object is a prefab
             GameObject prefab = accused as GameObject;
             if (prefab == null)
             {
-                return null; // Return null if not a prefab
+                return null;
             }
 
-            // Check for Particle Systems in the prefab and get infractions
             List<Infraction> infractions = CheckParticleSystems(prefab);
 
-            // If no infractions were found, return null to suppress default messages
             if (infractions == null || infractions.Count == 0)
             {
                 return null;
             }
 
-            // Create the Judgment if infractions were found
-            Judgment judgment = new Judgment
+            return new Judgment
             {
-                accused = accused,
+                accused = prefab,
                 judicator = this,
                 infractions = infractions
             };
-
-            return judgment;
         }
 
         private List<Infraction> CheckParticleSystems(GameObject prefab)
         {
-            if (prefab == null)
-            {
-                Debug.LogError("Prefab is null. Cannot check particle systems.");
-                return null;
-            }
-
             ParticleSystem[] particleSystems = prefab.GetComponentsInChildren<ParticleSystem>(true);
             if (particleSystems == null || particleSystems.Length == 0)
             {
-                // Silently handle cases where no Particle Systems are found.
-                return null;
+                return null; 
             }
 
             if (presets == null || presets.Count == 0)
             {
-                Debug.LogWarning("No presets available for comparison.");
-                return null;
+                return null; 
             }
 
             List<Infraction> infractions = new List<Infraction>();
 
             foreach (ParticleSystem particleSystem in particleSystems)
             {
+                // Get the path to the ParticleSystem for reporting
+                string particleSystemPath = AnimationUtility.CalculateTransformPath(particleSystem.transform, prefab.transform);
 
                 foreach (var preset in presets)
                 {
                     if (preset == null)
                     {
-                        Debug.LogWarning("Encountered a null preset.");
                         continue;
                     }
 
-                    // Use the inherited method to check infractions for each ParticleSystem
                     List<Infraction> presetInfractions = GetPresetInfractions(particleSystem, preset);
 
-                    if (presetInfractions == null)
+                    if (presetInfractions != null)
                     {
-                        break;
+                        // Append the ParticleSystem path to each infraction message
+                        foreach (var infraction in presetInfractions)
+                        {
+                            infraction.message = $"{particleSystemPath}: {infraction.message}";
+                        }
+
+                        infractions.AddRange(presetInfractions);
                     }
-
-                    // Check maxParticles against the preset
-                    ParticleSystem.MainModule mainModule = particleSystem.main;
-                    PropertyModification maxParticlesModification = Array.Find(preset.PropertyModifications,
-                        modification => modification.propertyPath.Contains("InitialModule.maxNumParticles"));
-                    int presetMaxParticles = int.Parse(maxParticlesModification.value);
-
-                    // Remove infractions related to maxParticles if within the limit
-                    presetInfractions.RemoveAll(infraction =>
-                        infraction.message.Contains("InitialModule.maxNumParticles") &&
-                        mainModule.maxParticles <= presetMaxParticles);
-
-                    // Add remaining infractions to the main infractions list
-                    infractions.AddRange(presetInfractions);
                 }
             }
 
@@ -105,44 +83,64 @@ namespace TRIPP.LexImperialis.Editor
 
             if (judgment == null || infraction == null)
             {
-                return result;
+                return result; 
             }
 
-            GameObject accusedGameObject = judgment.accused as GameObject;
-            if (accusedGameObject == null)
-            {
-                return result;
-            }
-
-            ParticleSystem particleSystem = accusedGameObject.GetComponent<ParticleSystem>();
-            if (particleSystem == null)
-            {
-                return result;
-            }
-
+            // Split the infraction message to extract path, property, and value information
             string[] parts = infraction.message.Split(':');
-            if (parts.Length < 2)
+            if (parts.Length < 3)
             {
-                return result;
+                return "The infraction message format is invalid."; // Return if the message format is incorrect
             }
 
-            string propertyName = parts[0].Trim();
-            string expectedValueString = parts[1].Substring(parts[1].IndexOf("expected") + 8).Split(',')[0].Trim();
+            string particleSystemPath = parts[0].Trim(); // Extract the ParticleSystem path
+            string propertyName = parts[1].Trim(); // Extract the property name
+            string valueInfo = parts[2].Trim(); // Extract expected and found values
 
-            SerializedObject serializedParticleSystem = new SerializedObject(particleSystem);
+            // Extract the expected value from the message
+            string expectedValueString = "";
+            if (valueInfo.Contains("expected"))
+            {
+                int expectedIndex = valueInfo.IndexOf("expected") + 8; // The word "expected" has a length of 8 characters. Adding 8 moves the starting position to the first character after the word "expected"
+                expectedValueString = valueInfo.Substring(expectedIndex).Split(',')[0].Trim();
+            }
+
+            GameObject prefab = judgment.accused as GameObject;
+            if (prefab == null)
+            {
+                return "The accused is not a prefab."; 
+            }
+
+            // Locate the specific ParticleSystem using the path
+            Transform targetTransform = prefab.transform.Find(particleSystemPath);
+            if (targetTransform == null)
+            {
+                return $"Failed to find the ParticleSystem at path: {particleSystemPath}.";
+            }
+
+            ParticleSystem targetParticleSystem = targetTransform.GetComponent<ParticleSystem>();
+            if (targetParticleSystem == null)
+            {
+                return $"Failed to find a ParticleSystem at path: {particleSystemPath}.";
+            }
+
+            // Access the serialized object of the ParticleSystem
+            SerializedObject serializedParticleSystem = new SerializedObject(targetParticleSystem);
             SerializedProperty property = serializedParticleSystem.FindProperty(propertyName);
 
             if (property == null)
             {
-                return result;
+                return $"The property {propertyName} was not found on the ParticleSystem.";
             }
 
+            bool applied = false;
             switch (property.propertyType)
             {
                 case SerializedPropertyType.Float:
                     if (float.TryParse(expectedValueString, out float floatValue))
                     {
                         property.floatValue = floatValue;
+                        applied = true;
                         result = $"Updated {propertyName} to {floatValue}.";
                     }
                     break;
@@ -151,6 +149,7 @@ namespace TRIPP.LexImperialis.Editor
                     if (int.TryParse(expectedValueString, out int intValue))
                     {
                         property.intValue = intValue;
+                        applied = true;
                         result = $"Updated {propertyName} to {intValue}.";
                     }
                     break;
@@ -159,12 +158,14 @@ namespace TRIPP.LexImperialis.Editor
                     if (bool.TryParse(expectedValueString, out bool boolValue))
                     {
                         property.boolValue = boolValue;
+                        applied = true;
                         result = $"Updated {propertyName} to {boolValue}.";
                     }
                     break;
 
                 case SerializedPropertyType.String:
                     property.stringValue = expectedValueString;
+                    applied = true;
                     result = $"Updated {propertyName} to {expectedValueString}.";
                     break;
 
@@ -172,28 +173,30 @@ namespace TRIPP.LexImperialis.Editor
                     if (ColorUtility.TryParseHtmlString(expectedValueString, out Color colorValue))
                     {
                         property.colorValue = colorValue;
+                        applied = true;
                         result = $"Updated {propertyName} to {colorValue}.";
                     }
                     break;
 
                 default:
-                    break;
+                    return $"The property type {property.propertyType} is not supported.";
             }
 
-            serializedParticleSystem.ApplyModifiedProperties();
-
-            if (judgment.infractions != null && judgment.infractions.Contains(infraction))
+            if (applied)
             {
-                judgment.infractions.Remove(infraction);
+                // Save changes to the prefab
+                serializedParticleSystem.ApplyModifiedProperties();
+                PrefabUtility.RecordPrefabInstancePropertyModifications(targetParticleSystem);
+                PrefabUtility.SavePrefabAsset(prefab);
+                judgment.infractions?.Remove(infraction);
 
-                if (judgment.infractions.Count == 0)
+                if (judgment.infractions?.Count == 0)
                 {
-                    result = $"Successfully mind-wiped, reprogrammed, and cybernetically-enhanced {judgment.accused.name}.";
+                    result = $"Successfully fixed all infractions for {judgment.accused.name}.";
                 }
             }
 
             return result;
         }
-
     }
 }

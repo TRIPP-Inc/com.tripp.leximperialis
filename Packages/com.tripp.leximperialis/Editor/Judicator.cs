@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEditor.Presets;
 using UnityEngine;
 
 namespace TRIPP.LexImperialis.Editor
@@ -19,6 +20,14 @@ namespace TRIPP.LexImperialis.Editor
         /// <param name="infraction">The infraction to base the string on.</param>
         /// <returns>A string representing the servitude imperpituis.</returns>
         public abstract string ServitudeImperpituis(Judgment judgment, Infraction infraction);
+
+        public virtual string ServitudeImperpituis(Judgment judgment, Infraction infraction, Preset chosenPreset)
+        {
+            // By default, do nothing or just return a fallback message.
+            // This ensures all other Judicators compile fine.
+            return "Not implemented for this Judicator type.";
+        }
+
 
         /// <summary>
         /// Creates a new judgment or adds an infraction to an existing judgment.
