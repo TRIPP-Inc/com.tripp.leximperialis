@@ -27,7 +27,7 @@ namespace TRIPP.LexImperialis.Editor
         private Dictionary<JudicatorFilter, bool> judicatorExpanded = new Dictionary<JudicatorFilter, bool>();
         private Dictionary<JudicatorFilter, Dictionary<Preset, bool>> presetStates = new Dictionary<JudicatorFilter, Dictionary<Preset, bool>>();
         private Dictionary<Object, bool> infractionFoldouts = new Dictionary<Object, bool>();
-        private bool showJudicators = true; // Toggles visibility of all Judicators
+        private bool showJudicators = true; 
 
         private void OnGUI()
         {
@@ -60,10 +60,9 @@ namespace TRIPP.LexImperialis.Editor
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
             EditorGUILayout.Space();
-
-            // Move Select/Deselect All button below the toolbar
             GUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
+
             if (GUILayout.Button("Select/Deselect All Judicators"))
             {
                 bool enableAll = !filterDictionary.Values.Any(enabled => enabled);
@@ -72,6 +71,7 @@ namespace TRIPP.LexImperialis.Editor
                     filterDictionary[key] = enableAll;
                 }
             }
+
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
             EditorGUILayout.Space();
@@ -120,18 +120,14 @@ namespace TRIPP.LexImperialis.Editor
                 GUILayout.BeginHorizontal();
                 GUILayout.FlexibleSpace();
                 GUILayout.EndHorizontal();
-
                 if (machineSpirit != null)
                 {
-
                     EditorGUILayout.BeginVertical("Box");
-
                     foreach (JudicatorFilter dct in filterDictionary.Keys.ToList())
                     {
                         if (dct != null && dct.judicator != null)
                             filterDictionary[dct] = EditorGUILayout.ToggleLeft(dct.judicator.name, filterDictionary[dct]);
                     }
-
                     EditorGUILayout.EndVertical();
                 }
 
@@ -149,16 +145,13 @@ namespace TRIPP.LexImperialis.Editor
                     {
                         if (judgment != null && judgment.infractions != null && judgment.infractions.Count > 0)
                         {
-                            // Ensure foldout state exists for the judgment
                             if (!infractionFoldouts.ContainsKey(judgment.accused))
                             {
                                 infractionFoldouts[judgment.accused] = false;
                             }
+
                             EditorGUILayout.BeginVertical("Box");
-
                             EditorGUILayout.BeginHorizontal();
-
-                            // Foldout arrow
                             infractionFoldouts[judgment.accused] = EditorGUILayout.Foldout(
                                 infractionFoldouts[judgment.accused],
                                 GUIContent.none,
@@ -168,9 +161,7 @@ namespace TRIPP.LexImperialis.Editor
                             EditorGUILayout.ObjectField(judgment.accused, typeof(Object), false, GUILayout.ExpandWidth(true));
                             GUILayout.FlexibleSpace();
                             GUILayout.EndHorizontal();
-
                             DrawInfractions(judgment, infractionFoldouts);
-
                             EditorGUILayout.EndVertical();
                         }
                     }
@@ -192,23 +183,17 @@ namespace TRIPP.LexImperialis.Editor
 
         private void DrawInfractions(Judgment judgment, Dictionary<Object, bool> infractionFoldouts)
         {
-            // Check if the foldout is expanded for this judgment
             if (infractionFoldouts[judgment.accused])
             {
                 EditorGUILayout.BeginVertical("Box");
-
-                // Iterate through the list of infractions
                 for (int i = 0; i < judgment.infractions.Count; i++)
                 {
                     Infraction infraction = judgment.infractions[i];
                     if (infraction != null)
                     {
                         EditorGUILayout.BeginHorizontal("Box");
-
-                        // Display the infraction message
                         EditorGUILayout.LabelField(infraction.message);
 
-                        // Check if the infraction is fixable
                         if (infraction.isFixable)
                         {
                             ImporterJudicator importerJudicator = judgment.judicator as ImporterJudicator;
@@ -216,7 +201,6 @@ namespace TRIPP.LexImperialis.Editor
                                 importerJudicator.presets != null &&
                                 importerJudicator.presets.Count > 1)
                             {
-                                // Display multiple fix buttons for each preset
                                 foreach (var preset in importerJudicator.presets)
                                 {
                                     if (preset == null)
@@ -231,7 +215,6 @@ namespace TRIPP.LexImperialis.Editor
                             }
                             else
                             {
-                                // Fallback: Single fix button
                                 if (GUILayout.Button("Fix"))
                                 {
                                     _message = judgment.judicator.ServitudeImperpituis(judgment, infraction);
@@ -239,11 +222,9 @@ namespace TRIPP.LexImperialis.Editor
                                 }
                             }
                         }
-
                         EditorGUILayout.EndHorizontal();
                     }
                 }
-
                 EditorGUILayout.EndVertical();
             }
         }
