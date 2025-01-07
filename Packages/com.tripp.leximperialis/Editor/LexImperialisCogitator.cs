@@ -27,7 +27,7 @@ namespace TRIPP.LexImperialis.Editor
         private Dictionary<JudicatorFilter, bool> judicatorExpanded = new Dictionary<JudicatorFilter, bool>();
         private Dictionary<JudicatorFilter, Dictionary<Preset, bool>> presetStates = new Dictionary<JudicatorFilter, Dictionary<Preset, bool>>();
         private Dictionary<Object, bool> infractionFoldouts = new Dictionary<Object, bool>();
-        private bool showJudicators = true; 
+        private int _index = 0;
 
         private void OnGUI()
         {
@@ -185,6 +185,7 @@ namespace TRIPP.LexImperialis.Editor
         {
             if (infractionFoldouts[judgment.accused])
             {
+                bool isImporterJudicator = judgment.judicator is ImporterJudicator;
                 EditorGUILayout.BeginVertical("Box");
                 for (int i = 0; i < judgment.infractions.Count; i++)
                 {
@@ -193,27 +194,9 @@ namespace TRIPP.LexImperialis.Editor
                     {
                         EditorGUILayout.BeginHorizontal("Box");
                         EditorGUILayout.LabelField(infraction.message);
-
                         if (infraction.isFixable)
                         {
-                            ImporterJudicator importerJudicator = judgment.judicator as ImporterJudicator;
-                            if (importerJudicator != null &&
-                                importerJudicator.presets != null &&
-                                importerJudicator.presets.Count > 1)
-                            {
-                                foreach (var preset in importerJudicator.presets)
-                                {
-                                    if (preset == null)
-                                        continue;
-
-                                    if (GUILayout.Button($"Fix with {preset.name}"))
-                                    {
-                                        _message = importerJudicator.ServitudeImperpituis(judgment, infraction, preset);
-                                        _randomMessageIsSet = false;
-                                    }
-                                }
-                            }
-                            else
+                            if (!isImporterJudicator)
                             {
                                 if (GUILayout.Button("Fix"))
                                 {
@@ -225,6 +208,35 @@ namespace TRIPP.LexImperialis.Editor
                         EditorGUILayout.EndHorizontal();
                     }
                 }
+
+                EditorGUILayout.BeginHorizontal();
+                if (isImporterJudicator)
+                {
+                    ImporterJudicator importerJudicator = judgment.judicator as ImporterJudicator;
+                    if (importerJudicator != null
+                        && importerJudicator.presets != null
+                        && importerJudicator.presets.Count > 0)
+
+                    {
+                        GUILayout.FlexibleSpace();
+                        if (importerJudicator.presets.Count > 1)
+                        {
+                            string[] presetNames = importerJudicator.presets.Select(p => p.name).ToArray();
+                            _index = EditorGUILayout.Popup(_index, presetNames);
+                        }
+                        else if (_index != 0)
+                        {
+                            _index = 0;
+                        }
+
+                        if(GUILayout.Button("Fix All"))
+                        {
+                            _message = judgment.judicator.ServitudeImperpituis(judgment, judgment.infractions[1], importerJudicator.presets[_index]);
+                        }
+                    }
+                }
+
+                EditorGUILayout.EndHorizontal();
                 EditorGUILayout.EndVertical();
             }
         }

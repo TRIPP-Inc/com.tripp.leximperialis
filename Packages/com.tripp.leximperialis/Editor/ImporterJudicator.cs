@@ -200,9 +200,8 @@ namespace TRIPP.LexImperialis.Editor
             {
                 chosenPreset.ApplyTo(importer);
                 result = $"Successfully mind-wiped, reprogrammed, and cybernetically-enhanced {judgment.accused.name}.";
-                RemoveInfraction(judgment, infraction);
-
                 importer.SaveAndReimport();
+                judgment.infractions.Clear();
             }
             return result;
         }
