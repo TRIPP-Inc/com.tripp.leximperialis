@@ -12,7 +12,6 @@ namespace TRIPP.LexImperialis.Editor
         public static void ShowWindow()
         {
             GetWindow<LexImperialisCogitator>("Lex Imperialis");
-
         }
 
         private LexImperialisMachineSpirit machineSpirit;
@@ -27,8 +26,8 @@ namespace TRIPP.LexImperialis.Editor
         private Dictionary<JudicatorFilter, bool> judicatorExpanded = new Dictionary<JudicatorFilter, bool>();
         private Dictionary<JudicatorFilter, Dictionary<Preset, bool>> presetStates = new Dictionary<JudicatorFilter, Dictionary<Preset, bool>>();
         private Dictionary<Object, bool> infractionFoldouts = new Dictionary<Object, bool>();
-        private int _index = 0;
-
+        private bool showJudicators = true;
+        private int _index;
         private void OnGUI()
         {
             if (machineSpirit == null)
@@ -60,22 +59,8 @@ namespace TRIPP.LexImperialis.Editor
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
             EditorGUILayout.Space();
-            GUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
-
-            if (GUILayout.Button("Select/Deselect All Judicators"))
-            {
-                bool enableAll = !filterDictionary.Values.Any(enabled => enabled);
-                foreach (var key in filterDictionary.Keys.ToList())
-                {
-                    filterDictionary[key] = enableAll;
-                }
-            }
-
-            GUILayout.FlexibleSpace();
-            GUILayout.EndHorizontal();
             EditorGUILayout.Space();
-            _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
+
             switch (_toolbarIndex)
             {
                 case 0:
@@ -85,7 +70,6 @@ namespace TRIPP.LexImperialis.Editor
                     DisplayLegislator();
                     break;
             }
-            EditorGUILayout.EndScrollView();
 
             if (Selection.count == 0)
             {
@@ -115,25 +99,66 @@ namespace TRIPP.LexImperialis.Editor
 
         private void DisplayAbitesJudge()
         {
+            _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
             if (Selection.count != 0)
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.FlexibleSpace();
                 GUILayout.EndHorizontal();
+
                 if (machineSpirit != null)
                 {
                     EditorGUILayout.BeginVertical("Box");
-                    foreach (JudicatorFilter dct in filterDictionary.Keys.ToList())
-                    {
-                        if (dct != null && dct.judicator != null)
-                            filterDictionary[dct] = EditorGUILayout.ToggleLeft(dct.judicator.name, filterDictionary[dct]);
-                    }
-                    EditorGUILayout.EndVertical();
-                }
 
-                if (GUILayout.Button("Pass Judgment"))
-                {
-                    judgments = machineSpirit.PassJudgement(filterDictionary); 
+                    // Add a foldout for the Judicators
+                    showJudicators = EditorGUILayout.Foldout(showJudicators, "Judicators", true);
+                    if (showJudicators)
+                    {
+                        int columnWidth = 200;
+                        int maxColumns = Mathf.Clamp(Mathf.FloorToInt(EditorGUIUtility.currentViewWidth / columnWidth), 1, 3);
+                        int itemsPerColumn = Mathf.CeilToInt((float)filterDictionary.Count / maxColumns);
+                        int index = 0;
+
+                        EditorGUILayout.BeginHorizontal();
+                        foreach (var judicator in filterDictionary.Keys.ToList())
+                        {
+                            if (index % itemsPerColumn == 0)
+                            {
+                                if (index > 0)
+                                    EditorGUILayout.EndVertical();
+                                GUILayout.Space(5);
+                                EditorGUILayout.BeginVertical("Box");
+                            }
+
+                            EditorGUILayout.BeginHorizontal("Box");
+                            string displayName = judicator.judicator.name.Replace("Judicator", "").Trim();
+                            filterDictionary[judicator] = EditorGUILayout.ToggleLeft(displayName, filterDictionary[judicator], GUILayout.Width(columnWidth));
+                            GUILayout.EndHorizontal();
+                            index++;
+                        }
+
+                        EditorGUILayout.EndVertical();
+                        EditorGUILayout.EndHorizontal();
+
+                        // Add Select/Deselect button at the bottom-right corner
+                        GUILayout.BeginHorizontal();
+                        GUILayout.FlexibleSpace();
+
+                        bool isFilterEnabled = filterDictionary.Values.Any(enabled => enabled);
+                        string toggleAllLabel = isFilterEnabled ? "Disable All" : "Enable All";
+
+                        if (GUILayout.Button(toggleAllLabel))
+                        {
+                            foreach (var key in filterDictionary.Keys.ToList())
+                            {
+                                filterDictionary[key] = !isFilterEnabled;
+                            }
+                        }
+
+                        GUILayout.EndHorizontal();
+                    }
+
+                    EditorGUILayout.EndVertical();
                 }
             }
 
@@ -179,8 +204,23 @@ namespace TRIPP.LexImperialis.Editor
                     _randomMessageIsSet = true;
                 }
             }
-        }
 
+            EditorGUILayout.EndScrollView();
+
+            if (Selection.count > 0)
+            {
+                GUILayout.FlexibleSpace();
+                GUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button("Pass Judgment"))
+                {
+
+                    judgments = machineSpirit.PassJudgement(filterDictionary);
+
+                }
+                GUILayout.EndHorizontal();
+            }
+        }
         private void DrawInfractions(Judgment judgment, Dictionary<Object, bool> infractionFoldouts)
         {
             if (infractionFoldouts[judgment.accused])
