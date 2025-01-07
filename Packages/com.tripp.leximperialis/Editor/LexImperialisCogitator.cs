@@ -12,7 +12,6 @@ namespace TRIPP.LexImperialis.Editor
         public static void ShowWindow()
         {
             GetWindow<LexImperialisCogitator>("Lex Imperialis");
-
         }
 
         private LexImperialisMachineSpirit machineSpirit;
@@ -27,7 +26,7 @@ namespace TRIPP.LexImperialis.Editor
         private Dictionary<JudicatorFilter, bool> judicatorExpanded = new Dictionary<JudicatorFilter, bool>();
         private Dictionary<JudicatorFilter, Dictionary<Preset, bool>> presetStates = new Dictionary<JudicatorFilter, Dictionary<Preset, bool>>();
         private Dictionary<Object, bool> infractionFoldouts = new Dictionary<Object, bool>();
-        private bool showJudicators = true; 
+        private bool showJudicators = true;
 
         private void OnGUI()
         {
@@ -60,20 +59,6 @@ namespace TRIPP.LexImperialis.Editor
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
             EditorGUILayout.Space();
-            GUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
-
-            if (GUILayout.Button("Select/Deselect All Judicators"))
-            {
-                bool enableAll = !filterDictionary.Values.Any(enabled => enabled);
-                foreach (var key in filterDictionary.Keys.ToList())
-                {
-                    filterDictionary[key] = enableAll;
-                }
-            }
-
-            GUILayout.FlexibleSpace();
-            GUILayout.EndHorizontal();
             EditorGUILayout.Space();
             _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
             switch (_toolbarIndex)
@@ -120,20 +105,53 @@ namespace TRIPP.LexImperialis.Editor
                 GUILayout.BeginHorizontal();
                 GUILayout.FlexibleSpace();
                 GUILayout.EndHorizontal();
+
                 if (machineSpirit != null)
                 {
                     EditorGUILayout.BeginVertical("Box");
-                    foreach (JudicatorFilter dct in filterDictionary.Keys.ToList())
+
+                    // Add a foldout for the Judicators
+                    showJudicators = EditorGUILayout.Foldout(showJudicators, "Judicators", true);
+                    if (showJudicators)
                     {
-                        if (dct != null && dct.judicator != null)
-                            filterDictionary[dct] = EditorGUILayout.ToggleLeft(dct.judicator.name, filterDictionary[dct]);
+                        GUILayout.Space(5);
+                        int columnWidth = 200; 
+                        int maxColumns = Mathf.Clamp(Mathf.FloorToInt(EditorGUIUtility.currentViewWidth / columnWidth), 1, 3); // Max 3 columns
+                        int itemsPerColumn = Mathf.CeilToInt((float)filterDictionary.Count / maxColumns);
+
+                        int index = 0;
+                        foreach (var judicator in filterDictionary.Keys.ToList())
+                        {
+                            if (index % maxColumns == 0) EditorGUILayout.BeginHorizontal(); // Start new row
+
+                            GUILayout.Space(15);
+                            string displayName = judicator.judicator.name.Replace("Judicator", "").Trim();
+                            filterDictionary[judicator] = EditorGUILayout.ToggleLeft(displayName, filterDictionary[judicator], GUILayout.Width(columnWidth));
+
+                            index++;
+                            if (index % maxColumns == 0 || index == filterDictionary.Count) EditorGUILayout.EndHorizontal(); // End row
+                        }
+
+                        // Add Select/Deselect button at the bottom-right corner
+                        GUILayout.BeginHorizontal();
+                        GUILayout.FlexibleSpace();
+                        if (GUILayout.Button("Select/Deselect All", GUILayout.Width(150)))
+                        {
+                            bool enableAll = !filterDictionary.Values.Any(enabled => enabled);
+                            foreach (var key in filterDictionary.Keys.ToList())
+                            {
+                                filterDictionary[key] = enableAll;
+                            }
+                        }
+                        GUILayout.EndHorizontal();
                     }
+
                     EditorGUILayout.EndVertical();
                 }
 
                 if (GUILayout.Button("Pass Judgment"))
                 {
-                    judgments = machineSpirit.PassJudgement(filterDictionary); 
+                    judgments = machineSpirit.PassJudgement(filterDictionary);
                 }
             }
 
