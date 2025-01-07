@@ -60,7 +60,7 @@ namespace TRIPP.LexImperialis.Editor
             GUILayout.EndHorizontal();
             EditorGUILayout.Space();
             EditorGUILayout.Space();
-            _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
+            
             switch (_toolbarIndex)
             {
                 case 0:
@@ -70,8 +70,7 @@ namespace TRIPP.LexImperialis.Editor
                     DisplayLegislator();
                     break;
             }
-            EditorGUILayout.EndScrollView();
-
+            
             if (Selection.count == 0)
             {
                 _message = "Please make a selection.";
@@ -100,6 +99,7 @@ namespace TRIPP.LexImperialis.Editor
 
         private void DisplayAbitesJudge()
         {
+            _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
             if (Selection.count != 0)
             {
                 GUILayout.BeginHorizontal();
@@ -114,11 +114,9 @@ namespace TRIPP.LexImperialis.Editor
                     showJudicators = EditorGUILayout.Foldout(showJudicators, "Judicators", true);
                     if (showJudicators)
                     {
-                        GUILayout.Space(5);
                         int columnWidth = 200; 
                         int maxColumns = Mathf.Clamp(Mathf.FloorToInt(EditorGUIUtility.currentViewWidth / columnWidth), 1, 3); 
                         int itemsPerColumn = Mathf.CeilToInt((float)filterDictionary.Count / maxColumns);
-
                         int index = 0;
 
                         EditorGUILayout.BeginHorizontal();
@@ -133,11 +131,9 @@ namespace TRIPP.LexImperialis.Editor
                             }
 
                             EditorGUILayout.BeginHorizontal(); 
-                            GUILayout.Space(15);
                             string displayName = judicator.judicator.name.Replace("Judicator", "").Trim();
                             filterDictionary[judicator] = EditorGUILayout.ToggleLeft(displayName, filterDictionary[judicator], GUILayout.Width(columnWidth));
                             GUILayout.EndHorizontal();
-
                             index++; 
                         }
 
@@ -147,24 +143,23 @@ namespace TRIPP.LexImperialis.Editor
                         // Add Select/Deselect button at the bottom-right corner
                         GUILayout.BeginHorizontal();
                         GUILayout.FlexibleSpace();
-                        if (GUILayout.Button("Select/Deselect All", GUILayout.Width(150)))
+
+                        bool isFilterEnabled = filterDictionary.Values.Any(enabled => enabled);
+                        string toggleAllLabel = isFilterEnabled ? "Disable All" : "Enable All";
+
+                        if (GUILayout.Button(toggleAllLabel))
                         {
-                            bool enableAll = !filterDictionary.Values.Any(enabled => enabled);
                             foreach (var key in filterDictionary.Keys.ToList())
                             {
-                                filterDictionary[key] = enableAll;
+                                filterDictionary[key] = !isFilterEnabled;
                             }
                         }
+
                         GUILayout.EndHorizontal();
                     }
 
                     EditorGUILayout.EndVertical();
-                }
-
-                if (GUILayout.Button("Pass Judgment"))
-                {
-                    judgments = machineSpirit.PassJudgement(filterDictionary);
-                }
+                }   
             }
 
             if (judgments != null)
@@ -208,6 +203,22 @@ namespace TRIPP.LexImperialis.Editor
                     _message = SetRandomMessage();
                     _randomMessageIsSet = true;
                 }
+            }
+
+            EditorGUILayout.EndScrollView();
+
+            if (Selection.count > 0)
+            {
+                GUILayout.FlexibleSpace();
+                GUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button("Pass Judgment"))
+                {
+
+                    judgments = machineSpirit.PassJudgement(filterDictionary);
+
+                }
+                GUILayout.EndHorizontal();
             }
         }
 
