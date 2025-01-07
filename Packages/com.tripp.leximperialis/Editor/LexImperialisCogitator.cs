@@ -116,21 +116,33 @@ namespace TRIPP.LexImperialis.Editor
                     {
                         GUILayout.Space(5);
                         int columnWidth = 200; 
-                        int maxColumns = Mathf.Clamp(Mathf.FloorToInt(EditorGUIUtility.currentViewWidth / columnWidth), 1, 3); // Max 3 columns
+                        int maxColumns = Mathf.Clamp(Mathf.FloorToInt(EditorGUIUtility.currentViewWidth / columnWidth), 1, 3); 
                         int itemsPerColumn = Mathf.CeilToInt((float)filterDictionary.Count / maxColumns);
 
                         int index = 0;
+
+                        EditorGUILayout.BeginHorizontal();
                         foreach (var judicator in filterDictionary.Keys.ToList())
                         {
-                            if (index % maxColumns == 0) EditorGUILayout.BeginHorizontal(); // Start new row
+                            if (index % itemsPerColumn == 0)
+                            {
+                                if (index > 0)
+                                    EditorGUILayout.EndVertical();
+                                GUILayout.Space(5);
+                                EditorGUILayout.BeginVertical("Box");
+                            }
 
+                            EditorGUILayout.BeginHorizontal(); 
                             GUILayout.Space(15);
                             string displayName = judicator.judicator.name.Replace("Judicator", "").Trim();
                             filterDictionary[judicator] = EditorGUILayout.ToggleLeft(displayName, filterDictionary[judicator], GUILayout.Width(columnWidth));
+                            GUILayout.EndHorizontal();
 
-                            index++;
-                            if (index % maxColumns == 0 || index == filterDictionary.Count) EditorGUILayout.EndHorizontal(); // End row
+                            index++; 
                         }
+
+                        EditorGUILayout.EndVertical();
+                        EditorGUILayout.EndHorizontal();
 
                         // Add Select/Deselect button at the bottom-right corner
                         GUILayout.BeginHorizontal();
